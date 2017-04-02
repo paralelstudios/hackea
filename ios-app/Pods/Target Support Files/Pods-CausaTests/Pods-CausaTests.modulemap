@@ -1,0 +1,6 @@
+framework module Pods_CausaTests {
+  umbrella header "Pods-CausaTests-umbrella.h"
+
+  export *
+  module * { export * }
+}
