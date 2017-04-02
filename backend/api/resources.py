@@ -121,4 +121,4 @@ def _send_not_found(message):
     return str(response)
 
 
-__all__ = [UsersEndpoint, OrgsEndpoint, SMSOrgEndpoint]
+endpoints = [UsersEndpoint, OrgsEndpoint, SMSOrgEndpoint]
