@@ -15,7 +15,7 @@ class UsersEndpoint(Resource):
     uri = "/users"
     def post(self):
         data = request.form
-        current_app.logger.info("create")
+
         if list(User.query.filter_by(email=data['email'])):
             # and if two ppl try to create acount at the same time hmmm??
             return abort(400, message='User {} already exists'.format(data['email']))
@@ -25,7 +25,7 @@ class UsersEndpoint(Resource):
             name=data['name'],
             phone=data['phone'])
         new_user.set_password(data['password'])
-
+        current_app.logger.info("created {}".format(data['email'])
         db.session.add(new_user)
         db.session.commit()
 
