@@ -1,0 +1,18 @@
+PODS:
+  - Alamofire (4.4.0)
+  - Haneke (1.0.2)
+  - MBProgressHUD (1.0.0)
+
+DEPENDENCIES:
+  - Alamofire
+  - Haneke
+  - MBProgressHUD
+
+SPEC CHECKSUMS:
+  Alamofire: dc44b1600b800eb63da6a19039a0083d62a6a62d
+  Haneke: 01454a67322faa0dd9d81fc0f447885044e71521
+  MBProgressHUD: 4890f671c94e8a0f3cf959aa731e9de2f036d71a
+
+PODFILE CHECKSUM: 2cfce147e12a6d0890c3268d9c1e1e72fa4fd072
+
+COCOAPODS: 1.2.0

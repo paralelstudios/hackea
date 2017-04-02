@@ -1,0 +1,6 @@
+framework module Pods_CausaUITests {
+  umbrella header "Pods-CausaUITests-umbrella.h"
+
+  export *
+  module * { export * }
+}
