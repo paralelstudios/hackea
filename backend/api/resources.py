@@ -36,7 +36,8 @@ class OrgsEndpoint(Resource):
     uri = "/orgs"
 
     def get(self):
-        return {"count": len(orgs), "orgs": [org.as_dict() for org in Org.query.all()]}
+        orgs = [org.as_dict() for org in Org.query.all()]
+        return {"count": len(orgs), "orgs": orgs}
 
     def post(self):
         name = request.form["name"]
