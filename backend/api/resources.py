@@ -12,7 +12,7 @@ from api.helpers import DateTimeEncoder
 import json
 from hackea.core import db
 from twilio import twiml
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 
 
 class UsersEndpoint(Resource):
@@ -67,30 +67,52 @@ def output_xml(data, code, headers=None):
     resp.headers.extend(headers or {})
     return resp
 
+def clean_and_split(s):
+    return [x.strip().lower() for x in s.split(',') if x]
 
 class SMSOrgEndpoint(Resource):
     uri = '/sms/orgs'
     representations = {'application/xml': output_xml}
     def post(self):
-        name = request.args.get('Body') or request.form['Body']
-        current_app.logger.info(name)
-        orgs = list(Org.query.filter(func.lower(Org.name).contains(name.lower())))
-        current_app.logger.info("got org")
+        raw_query = (request.args.get('Body')
+                     or request.form.get('Body'))
+        if not raw_query:
+            return _send_not_found('favor de formar su mensaje de acuerdo a "causa/municipio"')
+
+        query = raw_query.split('/')
+        current_app.logger.info(query)
+        kw_conditions, mun_conditions = [], []
+        key_words, municipios = None, None
+        key_words = clean_and_split(query[0])
+        # this is terrible forgive me
+        for kw in key_words:
+            kw_conditions.append(func.lower(Org.name).contains(kw))
+            kw_conditions.append(func.lower(Org.services).contains(kw))
+        if len(query) > 1:
+            municipios = clean_and_split(query[1])
+        if municipios:
+            for m in municipios:
+                mun_conditions.append(func.lower(Org.location).contains(m))
+
+        current_app.logger.info("got query {}".format(query))
+        orgs = list(Org.query.filter(
+            and_(
+                or_(*kw_conditions),
+                or_(*mun_conditions))))
+
         if not orgs:
-            current_app.logger.info("no org")
-            return _send_not_found()
+            return _send_not_found("No encontramos nada :(")
         org_names = [org.name for org in orgs]
         response = twiml.Response()
-        message = ["Organizaciones con {} en su nombre:".format(name)]
+        message = ["Organizaciones bajo {}:".format(raw_query)]
         response.message(
             '\n'.join(message + org_names))
-        current_app.logger.info("returning org")
         return str(response)
 
 
-def _send_not_found():
+def _send_not_found(message):
     response = twiml.Response()
-    response.message("No encontramos nada :(")
+    response.message(message)
     return str(response)
 
 
