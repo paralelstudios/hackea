@@ -51,7 +51,7 @@ def create_app(package_name, settings_module=None, settings_override=None):
         if app.config['TESTING'] and warnings:
             raise Exception(
                 'RUNNING TESTS ON A NONLOCAL DATABASE IS A DESTRUCTIVE ACTION')
-
+    db.init_app(app)
     if not app.debug:
         handler = logging.StreamHandler(sys.stderr)
         handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'))

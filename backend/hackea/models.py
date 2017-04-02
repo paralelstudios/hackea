@@ -3,10 +3,11 @@
     hackea
     ~~~~~~
 """
+import bcrypt
 
 from .core import db
 from sqlalchemy.dialects.postgresql import (UUID, JSONB)
-
+from flask import current_app
 
 class User(db.Model):
     """
@@ -16,31 +17,34 @@ class User(db.Model):
     id = db.Column(UUID, primary_key=True)
     email = db.Column(db.String)
     password = db.Column(db.String)
-    entity_id = db.Column(
-        UUID,
-        db.ForeignKey('entities.id', ondelete="CASCADE"),
-        index=True)
+    name = db.Column(db.String)
+    phone = db.Column(db.String)
+
+    def set_password(self, password):
+        self.password = bcrypt.hashpw(password.encode("UTF-8"), bcrypt.gensalt())
 
     def verify_password(self, password):
-        pwhash = bcrypt.hashpw(password, self.password)
+        pwhash = bcrypt.hashpw(password.encode("UTF-8"), self.password)
         return self.password == pwhash
 
 
-class Entity(db.Model):
-    """
-    Entity represents the connector between Users and their roles in the system
-    """
-
-    __tablename__ = 'entities'
-    id = db.Column(UUID, primary_key=True)
-
-
+org_owners_table = db.Table('org_owners',
+    db.Column('user_id', UUID,
+                  db.ForeignKey('users.id')),
+    db.Column('org_id', UUID,
+                  db.ForeignKey('orgs.id'))
+)
 class Org(db.Model):
     """
     Org represents an organization that a user may found
     """
     __tablename__ = 'orgs'
     id = db.Column(UUID, primary_key=True)
+    name = db.Column(db.String)
     features = db.Column(JSONB)
-    organizers = db.relationship(
-        Entity, backref='orgs', lazy='dynamic')
+
+    def as_dict(self):
+        return {x: y
+                    for (x, y)
+                    in self.__dict__.items()
+                    if x != "_sa_instance_state"}

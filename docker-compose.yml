@@ -1,0 +1,23 @@
+backend:
+  restart: always
+  build: ./backend
+  ports:
+    - "80:80"
+  links:
+    - postgres:postgres
+
+postgres:
+  restart: always
+  image: postgres:latest
+  env_file: db.env
+  volumes_from:
+    - data
+  ports:
+    - "5432:5432"
+
+
+data:
+  image: postgres:latest
+  command: "true"
+  volumes:
+    - /var/lib/postgresql
