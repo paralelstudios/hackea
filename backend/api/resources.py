@@ -75,8 +75,9 @@ class SMSOrgEndpoint(Resource):
 
 def _send_not_found():
     response = twiml.Response()
-    response.message(NOT_FOUND_MESSAGE)
+    response.message("No encontramos nada :(")
     return str(response)
 
 
 __all__ = [UsersEndpoint, OrgsEndpoint, SMSOrgEndpoint]
+B
