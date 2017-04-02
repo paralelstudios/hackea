@@ -111,7 +111,7 @@ class SMSOrgEndpoint(Resource):
         response = twiml.Response()
         message = ["Organizaciones bajo {}:".format(raw_query)]
         response.message(
-            '\n'.join(message + set(org_names)))
+            '\n'.join(message + list(set(org_names))))
         return str(response)
 
 
