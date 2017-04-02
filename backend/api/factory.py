@@ -16,7 +16,6 @@ import resources
 
 
 
-
 def create_app(package_name, **kwargs):
     app = factory.create_app(__name__, **kwargs)
     app.url_map.strict_slashes = False
@@ -24,7 +23,8 @@ def create_app(package_name, **kwargs):
     for code in default_exceptions:
         app.errorhandler(code)(handle_http_error)
     app.errorhandler(AssertionError)(handle_http_error)
-    app.before_request(request_accepts_json)
+
     api = HackeaAPI(app)
+    api._restful_api.representations['application/xml'] = resources.output_xml
     api.register_resources(*resources.__all__)
     return app

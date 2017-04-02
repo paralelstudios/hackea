@@ -5,11 +5,13 @@
     API resources
 """
 from uuid import uuid4
-from flask import Flask, request, current_app
+from flask import Flask, request, current_app, make_response
 from flask_restful import abort, Resource
 from hackea.models import User, Org
 from hackea.core import db
 from twilio import twiml
+from sqlalchemy import func
+
 
 class UsersEndpoint(Resource):
     uri = "/users"
@@ -56,20 +58,31 @@ class OrgsEndpoint(Resource):
         db.session.commit()
         return {"success": True, "org_id": new_org.id, "user_id": user_id}, 201
 
+
+def output_xml(data, code, headers=None):
+    """Makes a Flask response with a XML encoded body"""
+    resp = make_response(data, code)
+    resp.headers.extend(headers or {})
+    return resp
+
+
 class SMSOrgEndpoint(Resource):
     uri = '/sms/orgs'
-
+    representations = {'application/xml': output_xml}
     def post(self):
-        name = request.form['Body']
-        orgs = list(Org.query.filter(Org.name.contains(name)))
-
+        name = request.args.get('Body') or request.form['Body']
+        current_app.logger.info(name)
+        orgs = list(Org.query.filter(func.lower(Org.name).contains(name.lower())))
+        current_app.logger.info("got org")
         if not orgs:
+            current_app.logger.info("no org")
             return _send_not_found()
         org_names = [org.name for org in orgs]
         response = twiml.Response()
         message = ["Organizaciones con {} en su nombre:".format(name)]
         response.message(
             '\n'.join(message + org_names))
+        current_app.logger.info("returning org")
         return str(response)
 
 
@@ -80,4 +93,3 @@ def _send_not_found():
 
 
 __all__ = [UsersEndpoint, OrgsEndpoint, SMSOrgEndpoint]
-B

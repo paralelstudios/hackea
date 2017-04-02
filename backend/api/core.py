@@ -11,6 +11,7 @@ import flask_restful as restful
 from .exceptions import default_exceptions, ServiceUnavailable
 from sqlalchemy.exc import OperationalError
 
+
 class RestfulAPI(restful.Api):
     def handle_error(self, exception):
         """handle api exceptions in as HALly a way as possible"""
