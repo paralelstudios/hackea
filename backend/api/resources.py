@@ -9,7 +9,7 @@ from flask import Flask, request, current_app
 from flask_restful import abort, Resource
 from hackea.models import User, Org
 from hackea.core import db
-
+from twilio import twiml
 
 class UsersEndpoint(Resource):
     uri = "/users"
@@ -36,11 +36,7 @@ class OrgsEndpoint(Resource):
     uri = "/orgs"
 
     def get(self):
-        name = request.args.get('name')
-        if not name:
-            return {"message": "please search by name"}, 400
-        orgs = list(Org.query.filter(Org.name.contains(name)))
-        return {"count": len(orgs), "orgs": [x.name for x in orgs]}
+        return {"count": len(orgs), "orgs": [org.as_dict() for org in Org.query.all()]}
 
     def post(self):
         name = request.form["name"]
@@ -59,4 +55,27 @@ class OrgsEndpoint(Resource):
         db.session.commit()
         return {"success": True, "org_id": new_org.id, "user_id": user_id}, 201
 
-__all__ = [UsersEndpoint, OrgsEndpoint]
+class SMSOrgEndpoint(Resource):
+    uri = '/sms/orgs'
+
+    def post(self):
+        name = request.form['Body']
+        orgs = list(Org.query.filter(Org.name.contains(name)))
+
+        if not orgs:
+            return _send_not_found()
+        org_names = [org.name for org in orgs]
+        response = twiml.Response()
+        message = ["Organizaciones con {} en su nombre:".format(name)]
+        response.message(
+            '\n'.join(message + org_names))
+        return str(response)
+
+
+def _send_not_found():
+    response = twiml.Response()
+    response.message(NOT_FOUND_MESSAGE)
+    return str(response)
+
+
+__all__ = [UsersEndpoint, OrgsEndpoint, SMSOrgEndpoint]
