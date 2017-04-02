@@ -4,6 +4,7 @@ from hackea.core import db
 from hackea.models import Org
 from flask_script import Command, Option
 import csv
+from unidecode import unidecode
 
 class IngestOrgs(Command):
     """From a CSV ingest some orgs"""
@@ -21,7 +22,7 @@ class IngestOrgs(Command):
             if key in boolean_keys:
                 new_org[key] = True if ('s' in row[key] or 'y' in row[key]) else False
             else:
-                new_org[key] = v
+                new_org[key] = unidecode(v)
         return Org(id=str(uuid4()), **new_org)
 
     def run(self, filename, columns):

@@ -13,7 +13,7 @@ import json
 from hackea.core import db
 from twilio import twiml
 from sqlalchemy import func, or_, and_
-
+from unidecode import unidecode
 
 class UsersEndpoint(Resource):
     uri = "/users"
@@ -26,7 +26,7 @@ class UsersEndpoint(Resource):
         new_user = User(
             id=str(uuid4()),
             email=data['email'],
-            name=data['name'],
+            name=unidecode(data['name']),
             phone=data['phone'])
         new_user.set_password(data['password'])
         current_app.logger.info("created {}".format(data['email']))
@@ -54,7 +54,7 @@ class OrgsEndpoint(Resource):
 
         new_org = Org(
             id=str(uuid4()),
-            name=name)
+            name=unidecode(name))
         new_org.organizers.append(user)
         db.session.add(new_org)
         db.session.commit()
@@ -68,7 +68,7 @@ def output_xml(data, code, headers=None):
     return resp
 
 def clean_and_split(s):
-    return [x.strip().lower() for x in s.split(',') if x]
+    return [unidecode(x.strip().lower()) for x in s.split(',') if x]
 
 class SMSOrgEndpoint(Resource):
     uri = '/sms/orgs'
@@ -84,15 +84,20 @@ class SMSOrgEndpoint(Resource):
         kw_conditions, mun_conditions = [], []
         key_words, municipios = None, None
         key_words = clean_and_split(query[0])
+
         # this is terrible forgive me
+        def contains_keyword(col, kw):
+            return func.lower(col).contains(kw)
+
         for kw in key_words:
-            kw_conditions.append(func.lower(Org.name).contains(kw))
-            kw_conditions.append(func.lower(Org.services).contains(kw))
+            kw_conditions.append(contains_keyword(Org.name, kw))
+            kw_conditions.append(contains_keyword(Org.services, kw))
+            kw_conditions.append(contains_keyword(Org.mission, kw))
         if len(query) > 1:
             municipios = clean_and_split(query[1])
         if municipios:
             for m in municipios:
-                mun_conditions.append(func.lower(Org.location).contains(m))
+                mun_conditions.append(contains_keyword(Org.location, m))
 
         current_app.logger.info("got query {}".format(query))
         orgs = list(Org.query.filter(
@@ -102,11 +107,11 @@ class SMSOrgEndpoint(Resource):
 
         if not orgs:
             return _send_not_found("No encontramos nada :(")
-        org_names = [org.name for org in orgs]
+        org_names = [org.name + " tel: " + org.phone for org in orgs]
         response = twiml.Response()
         message = ["Organizaciones bajo {}:".format(raw_query)]
         response.message(
-            '\n'.join(message + org_names))
+            '\n'.join(message + set(org_names)))
         return str(response)
 
 

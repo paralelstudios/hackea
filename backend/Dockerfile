@@ -1,4 +1,4 @@
-FROM tiangolo/uwsgi-nginx-flask:flask
+FROM tiangolo/uwsgi-nginx-flask:flask-python3.5
 MAINTAINER Michael Perez "mpuhrez@gmail.com"
 COPY . /app
 WORKDIR /app
