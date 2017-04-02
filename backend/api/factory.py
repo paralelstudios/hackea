@@ -11,8 +11,9 @@ import flask_restful as restful
 from .helpers import request_accepts_json, handle_http_error
 from .core import HackeaAPI, RestfulAPI
 from .exceptions import default_exceptions
-from .resources import UsersEndpoint
-from flask_restful import Resource
+
+import resources
+
 
 
 
@@ -25,5 +26,5 @@ def create_app(package_name, **kwargs):
     app.errorhandler(AssertionError)(handle_http_error)
     app.before_request(request_accepts_json)
     api = HackeaAPI(app)
-    api.register_resources(UsersEndpoint)
+    api.register_resources(*resources.__all__)
     return app
