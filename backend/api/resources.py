@@ -25,7 +25,7 @@ class UsersEndpoint(Resource):
             name=data['name'],
             phone=data['phone'])
         new_user.set_password(data['password'])
-        current_app.logger.info("created {}".format(data['email'])
+        current_app.logger.info("created {}".format(data['email']))
         db.session.add(new_user)
         db.session.commit()
 
