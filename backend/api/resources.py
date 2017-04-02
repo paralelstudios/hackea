@@ -8,6 +8,8 @@ from uuid import uuid4
 from flask import Flask, request, current_app, make_response
 from flask_restful import abort, Resource
 from hackea.models import User, Org
+from api.helpers import DateTimeEncoder
+import json
 from hackea.core import db
 from twilio import twiml
 from sqlalchemy import func
@@ -38,7 +40,7 @@ class OrgsEndpoint(Resource):
     uri = "/orgs"
 
     def get(self):
-        orgs = [org.as_dict() for org in Org.query.all()]
+        orgs = [json.dumps(org.as_dict(), cls=DateTimeEncoder) for org in Org.query.all()]
         return {"count": len(orgs), "orgs": orgs}
 
     def post(self):

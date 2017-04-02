@@ -4,6 +4,9 @@ from functools import wraps
 from jsonschema import ValidationError, validate
 from . import exceptions
 from flask import request, abort
+from datetime import datetime
+import json
+
 
 def handle_http_error(err):
     """Returns an HTTP response object based on the specified error. If the error is a
@@ -52,3 +55,11 @@ def not_found(view):
         else:
             return result
     return wrapper
+
+
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+
+        return json.JSONEncoder.default(self, o)

@@ -22,12 +22,12 @@ class IngestOrgs(Command):
                 new_org[key] = True if ('s' in row[key] or 'y' in row[key]) else False
             else:
                 new_org[key] = v
-        return Org(**new_org, id=str(uuid4()))
+        return Org(id=str(uuid4()), **new_org)
 
     def run(self, filename, columns):
         with open(filename) as csvfile:
             reader = csv.DictReader(csvfile, columns)
-            orgs = [self._create_org(row) for row in reader]
+            orgs = [self._create_org(row) for row in reader if not list(Org.query.filter_by(name=row['name']))]
 
         db.session.add_all(orgs)
         db.session.commit()
