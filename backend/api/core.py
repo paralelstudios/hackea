@@ -8,25 +8,8 @@
 from hackea.core import factory, db
 from hackea.models import User
 import flask_restful as restful
-from .exceptions import default_exceptions, ServiceUnavailable
 from sqlalchemy.exc import OperationalError
-
-
-class RestfulAPI(restful.Api):
-    def handle_error(self, exception):
-        """handle api exceptions in as HALly a way as possible"""
-        if hasattr(exception, 'code'):
-            # it's a wekzeug error
-            return handle_http_error(exception)
-        else:
-            # else log and 500
-            current_app.logger.exception(exception)
-            errors = None
-            if current_app.debug:
-                errors = [traceback.format_exc()]
-            exception = exceptions.InternalServerError(error=errors)
-
-            return handle_http_error(exception)
+from werkzeug.exceptions import ServiceUnavailable
 
 
 class HackeaAPI(object):
@@ -36,7 +19,7 @@ class HackeaAPI(object):
 
     def __init__(self, app=None):
         self.app = None
-        self._restful_api = RestfulAPI(app, prefix="/%s" % self.prefix)
+        self._restful_api = restful.Api(app, prefix="/%s" % self.prefix)
         if app:
             self.init_app(app)
 
@@ -64,4 +47,4 @@ class HackeaAPI(object):
         if self._test_db():
             return 'OK'
         else:
-            raise ServiceUnavailable
+            raise e.ServiceUnavailable

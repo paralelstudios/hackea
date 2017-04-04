@@ -1,65 +1,65 @@
 # -*- coding: utf-8 -*-
 
-from functools import wraps
 from jsonschema import ValidationError, validate
-from . import exceptions
-from flask import request, abort
+from flask import make_response
+from unidecode import unidecode
 from datetime import datetime
 import json
+from uuid import uuid4
 
 
-def handle_http_error(err):
-    """Returns an HTTP response object based on the specified error. If the error is a
-    standard/default Flask/Werkzeug error, an equivalent is looked up in order to return a JSON
-    formatted response.
-    :param err: the error to evaluate
+def uuid():
+    return str(uuid4())
+
+
+def try_committing(connection_reference):
     """
-    if not isinstance(err, exceptions.JSONException):
-        if isinstance(err, AssertionError):
-            return exceptions.InvalidParameters(errors=[err.message]).get_response()
-        err = exceptions.default_exceptions[err.code]()
-    return err.get_response()
+    Pass a scoped session or connection (anything with commit and rollback methods)
+    to this function, and it will try committing, with rollback on failure.
+    """
+    try:
+        connection_reference.commit()
+    except Exception as e:
+        connection_reference.rollback()
+        raise e
 
 
-ACCEPTABLE = set([
-    'application/json',
-    'application/hal+json',
-    'application/vnd.error+json'
-])
+def to_regex_or(*strs):
+    """returns strs as an or regex, empty args will match anything!"""
+    return ".*(" + "|".join(strs) + ").*"
 
 
-def request_accepts_json():
-    accepts = False
-    for content_type in ACCEPTABLE:
-        if content_type in request.accept_mimetypes:
-            accepts = True
-
-    if not accepts:
-        raise exceptions.NotAcceptable()
-
-def get_uri():
-    path = request.path
-    qs = request.query_string
-    if qs:
-        return '?'.join([path, qs])
-    return path
+def contains_keyword(col, kw):
+    return func.lower(col).contains(kw)
 
 
+def twilio_send_not_found(message):
+    response = twiml.Response()
+    response.message(message)
+    return str(response)
 
-def not_found(view):
-    @wraps(view)
-    def wrapper(*args, **kwargs):
-        result = view(*args, **kwargs)
-        if result is None:
-            abort(404)
-        else:
-            return result
-    return wrapper
 
+def output_xml(data, code, headers=None):
+    """Makes a Flask response with a XML encoded body"""
+    resp = make_response(data, code)
+    resp.headers.extend(headers or {})
+    return resp
+
+def validate_form(form, required, uri):
+    provided = set(form)
+    if required - provided:
+        missing = required_fields - keys
+        return {'message': '{} post missing {}, only got {}'
+                        .format(uri, missing, provided)}, 400
+
+def clean_and_split(s):
+    return [unidecode(x.strip().lower()) for x in s.split(',') if x]
+
+def sms_org_format(org):
+    return "{name} tel: {phone}".format(name=org.name, phone=org.phone)
 
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, datetime):
             return o.isoformat()
-
         return json.JSONEncoder.default(self, o)

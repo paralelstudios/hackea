@@ -4,34 +4,40 @@
     ~~~~~~~~~~~~~~~~
     API resources
 """
-from uuid import uuid4
 from flask import Flask, request, current_app, make_response
-from flask_restful import abort, Resource
-from hackea.models import User, Org
-from api.helpers import DateTimeEncoder
-import json
-from hackea.core import db
 from twilio import twiml
 from sqlalchemy import func, or_, and_
+import json
 from unidecode import unidecode
+from flask_restful import abort, Resource
+from hackea.models import User, Org
+from api.helpers import (
+    DateTimeEncoder, output_xml, twilio_send_not_found,
+    uuid, try_committing, to_regex_or, sms_org_format,
+    clean_and_split, validate_form)
+from hackea.core import db
+
 
 class UsersEndpoint(Resource):
     uri = "/users"
     def post(self):
         data = request.form
-        current_app.logger.info(data)
-        if list(User.query.filter_by(email=data['email'])):
-            # and if two ppl try to create acount at the same time hmmm??
+        # replace validation logic with jsonschema
+        form_errs = validate_form(
+            data, {'password', 'email', 'name', 'phone'}, self.uri)
+
+        if User.query.filter_by(email=data['email']).first():
             return {'message': 'User {} already exists'.format(data['email'])}, 400
         new_user = User(
-            id=str(uuid4()),
+            id=uuid(),
             email=data['email'],
             name=unidecode(data['name']),
             phone=data['phone'])
+
         new_user.set_password(data['password'])
-        current_app.logger.info("created {}".format(data['email']))
+
         db.session.add(new_user)
-        db.session.commit()
+        try_committing(db.session)
 
         return {"success": True, "user_id": new_user.id}, 201
 
@@ -40,66 +46,72 @@ class OrgsEndpoint(Resource):
     uri = "/orgs"
 
     def get(self):
-        orgs = [json.dumps(org.as_dict(), cls=DateTimeEncoder) for org in Org.query.all()]
-        return {"count": len(orgs), "orgs": orgs}
+        orgs = [
+            org.as_dict()
+            for org in Org.query.all()]
+        return {"count": len(orgs),
+                "orgs": json.dumps(orgs, cls=DateTimeEncoder)}
 
     def post(self):
+        form_err = validate_form(
+            request.form, {'name', 'user_id'}, self.uri)
+        if form_err:
+            return form_err
+
         name = request.form["name"]
         user_id = request.form["user_id"]
         user = User.query.get(user_id)
+
         if not user:
             return {"message": "User {} doesn't exist".format(user_id)}, 400
-        if list(Org.query.filter_by(name=name)):
+
+        if Org.query.filter_by(name=name).first():
             return {"message": "Org {} already exists".format(name)}, 400
 
         new_org = Org(
-            id=str(uuid4()),
+            id=uuid(),
             name=unidecode(name))
+
         new_org.organizers.append(user)
+
         db.session.add(new_org)
-        db.session.commit()
+        try_committing(db.session)
+
         return {"success": True, "org_id": new_org.id, "user_id": user_id}, 201
 
 
-def output_xml(data, code, headers=None):
-    """Makes a Flask response with a XML encoded body"""
-    resp = make_response(data, code)
-    resp.headers.extend(headers or {})
-    return resp
-
-def clean_and_split(s):
-    return [unidecode(x.strip().lower()) for x in s.split(',') if x]
 
 class SMSOrgEndpoint(Resource):
     uri = '/sms/orgs'
     representations = {'application/xml': output_xml}
+
     def post(self):
-        raw_query = (request.args.get('Body')
-                     or request.form.get('Body'))
+        raw_query = (
+            request.args.get('Body')
+            or request.form.get('Body'))
+
         if not raw_query:
-            return _send_not_found('favor de formar su mensaje de acuerdo a "causa/municipio"')
+            return send_not_found(
+                'favor de formar su mensaje de acuerdo a "causa/municipio"')
 
         query = raw_query.split('/')
-        current_app.logger.info(query)
+
+        key_words = query[0]
+        municipios = query[1] if len(query) > 1 else None
         kw_conditions, mun_conditions = [], []
-        key_words, municipios = None, None
-        key_words = clean_and_split(query[0])
+        kw_regex = to_regex_or(*clean_and_split(query[0]))
 
-        # this is terrible forgive me
-        def contains_keyword(col, kw):
-            return func.lower(col).contains(kw)
+        if key_words:
+            kw_conditions += [
+                Org.name.op('~*')(kw_regex),
+                Org.services.op('~*')(kw_regex),
+                Org.mission.op('~*')(kw_regex)
+            ]
 
-        for kw in key_words:
-            kw_conditions.append(contains_keyword(Org.name, kw))
-            kw_conditions.append(contains_keyword(Org.services, kw))
-            kw_conditions.append(contains_keyword(Org.mission, kw))
-        if len(query) > 1:
-            municipios = clean_and_split(query[1])
         if municipios:
-            for m in municipios:
-                mun_conditions.append(contains_keyword(Org.location, m))
+            muni_regex = to_regex_or(*clean_and_split(municipios))
+            mun_conditions.append(Org.location.op('~*')(muni_regex))
 
-        current_app.logger.info("got query {}".format(query))
         orgs = list(Org.query.filter(
             and_(
                 or_(*kw_conditions),
@@ -107,18 +119,16 @@ class SMSOrgEndpoint(Resource):
 
         if not orgs:
             return _send_not_found("No encontramos nada :(")
-        org_names = [org.name + " tel: " + org.phone for org in orgs]
+
+        org_names = [sms_org_format(org) for org in orgs]
+
         response = twiml.Response()
-        message = ["Organizaciones bajo {}:".format(raw_query)]
+        message = ['Organizaciones encontrado bajo "{}":'.format(raw_query)]
         response.message(
-            '\n'.join(message + list(set(org_names))))
+            '\n'.join(message + org_names))
         return str(response)
 
 
-def _send_not_found(message):
-    response = twiml.Response()
-    response.message(message)
-    return str(response)
 
 
 endpoints = [UsersEndpoint, OrgsEndpoint, SMSOrgEndpoint]
