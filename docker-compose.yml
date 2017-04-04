@@ -9,7 +9,7 @@ backend:
 postgres:
   restart: always
   image: postgres:latest
-  env_file: db.env
+  env_file: db.env.secrets
   volumes_from:
     - data
   ports:
