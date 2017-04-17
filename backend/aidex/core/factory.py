@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    hackea.core.factory
+    aidex.core.factory
     ~~~~~~~~~~~~~~~~~~~~
     app factory function
 """
@@ -14,14 +14,9 @@ from . import db
 
 def create_app(package_name, settings_module=None, settings_override=None):
     app = Flask(package_name)
-    app.config.from_object('hackea.settings')
-    app.config.from_pyfile(
-        os.environ.get(
-            'SETTINGS_FILE',
-            os.path.join(app.config['BASE_DIR'], 'instance', 'settings.cfg')
-        ),
-        silent=True
-    )
+    app.config.from_object('aidex.settings')
+    if os.getenv('AIDEX_CONFIG_FILE'):
+        app.config.from_envvar('AIDEX_CONFIG_FILE')
 
     if settings_override:
         for key, value in settings_override:

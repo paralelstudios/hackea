@@ -19,8 +19,8 @@ To get a backend service running, make you have docker (docker-machine, docker-c
 
 first create/start your docker machine
 ```
-$ docker-machine create -d virtualbox hackea
-$ eval $(docker-machine env hackea)
+$ docker-machine create -d virtualbox aidex
+$ eval $(docker-machine env aidex)
 ```
 
 then build up your containers, instatiate them, and run the database migrations

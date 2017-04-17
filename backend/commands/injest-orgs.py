@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from hackea.models import Org
+from aidex.models import Org
 from flask_script import Command, Option
 import csv
 

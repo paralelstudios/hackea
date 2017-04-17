@@ -1,4 +1,4 @@
-# Hackea Backend
+# AIDEX Backend
 
 ## Installation
 

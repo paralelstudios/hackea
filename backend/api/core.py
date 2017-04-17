@@ -5,14 +5,14 @@
     API core
 """
 
-from hackea.core import db
-from hackea.models import User
+from aidex.core import db
+from aidex.models import User
 import flask_restful as restful
 from sqlalchemy.exc import OperationalError
 from werkzeug.exceptions import ServiceUnavailable
 
 
-class HackeaAPI(object):
+class AIDEXAPI(object):
     """An API class that registers Users and Organizations"""
     _ping_uri = '/_ping'
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    hackea.core
+    aidex.core
     ~~~~~~~~~~~~
     Flask extension imports
 """

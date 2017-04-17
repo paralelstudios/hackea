@@ -22,9 +22,9 @@ target_metadata = None
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 import os
-from hackea.core.factory import create_app
-from hackea.core import db
-from hackea.models import *
+from aidex.core.factory import create_app
+from aidex.core import db
+from aidex.models import *
 app = create_app('backend')
 
 SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI', app.config.get('SQLALCHEMY_DATABASE_URI'))

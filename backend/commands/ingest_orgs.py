@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from uuid import uuid4
-from hackea.core import db
-from hackea.models import Org
+from aidex.core import db
+from aidex.models import Org
 from flask_script import Command, Option
 import csv
 from unidecode import unidecode

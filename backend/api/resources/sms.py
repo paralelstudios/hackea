@@ -9,7 +9,7 @@ from flask_restful import Resource
 from datetime import datetime, timedelta
 from twilio import twiml
 from sqlalchemy import or_, and_
-from hackea.models import Org
+from aidex.models import Org
 from api.helpers import (
     output_xml, twilio_send_not_found,
     to_regex_or, sms_org_format,

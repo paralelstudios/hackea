@@ -11,12 +11,11 @@ from unidecode import unidecode
 from flask_restful import Resource
 from flask_jwt import jwt_required
 from werkzeug import exceptions as e
-from hackea.models import User, Org
+from aidex.models import User, Org
 from api.helpers import (
     DateTimeEncoder,
     uuid, try_committing)
-from hackea.core import db
-
+from aidex.core import db
 
 
 class Validatable(object):

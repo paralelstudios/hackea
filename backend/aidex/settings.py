@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    hackea.settings
+    aidex.settings
     ~~~~~~~~~~~~~~~~
     Global backend package settings
 """
@@ -14,8 +14,8 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 LOGGING_DIR = os.path.join(BASE_DIR, "log")
 
 # SQL DB settings
-DB_USER = os.environ.get('POSTGRES_ENV_POSTGRES_USER', 'hackea')
-DB_PASSWORD = os.environ.get('POSTGRES_ENV_POSTGRES_PASSWORD', 'hackea')
+DB_USER = os.environ.get('POSTGRES_ENV_POSTGRES_USER', 'aidex')
+DB_PASSWORD = os.environ.get('POSTGRES_ENV_POSTGRES_PASSWORD', 'aidex')
 DB_HOST = os.environ.get('POSTGRES_PORT_5432_TCP_ADDR', 'localhost')
 DB_PORT = int(os.environ.get('POSTGRES_PORT_5432_TCP_PORT', 5432))
 SQLALCHEMY_DATABASE_URI = 'postgresql://{}:{}@{}:{}/{}'.format(

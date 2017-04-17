@@ -2,7 +2,7 @@
 
 from flask_script import Manager
 from commands.ingest_orgs import IngestOrgs
-from hackea.core.factory import create_app
+from aidex.core.factory import create_app
 
 app = create_app(__name__)
 manager = Manager(app)

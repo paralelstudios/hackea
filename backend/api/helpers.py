@@ -5,7 +5,7 @@ from datetime import datetime
 from twilio import twiml
 import json
 from uuid import uuid4
-from hackea.models import User
+from aidex.models import User
 
 
 def uuid():
