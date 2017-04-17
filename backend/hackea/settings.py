@@ -6,8 +6,6 @@
 """
 
 import os
-import operator
-from datetime import datetime
 
 ENVIRONMENT = 'local'
 DEBUG = True

@@ -3,11 +3,13 @@
     hackea
     ~~~~~~
 """
-import bcrypt
 
-from .core import db
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy import ForeignKey
+from flask_bcrypt import generate_password_hash, check_password_hash
+from flask import current_app
+from .core import db
 
 
 class Dictable(object):
@@ -41,7 +43,7 @@ class User(db.Model, Dictable):
     __tablename__ = 'users'
     id = db.Column(UUID, primary_key=True)
     email = db.Column(db.String)
-    password = db.Column(db.String)
+    _password = db.Column(db.Binary)
     name = db.Column(db.String)
     phone = db.Column(db.String)
     orgs = db.relationship(
@@ -51,12 +53,20 @@ class User(db.Model, Dictable):
         "Event", secondary=event_attendance_table,
         backref="attendees")
 
-    def set_password(self, password):
-        self.password = bcrypt.hashpw(password.encode("UTF-8"), bcrypt.gensalt())
+    @hybrid_property
+    def password(self):
+        return self._password
+
+    @password.setter
+    def _set_password(self, password):
+        self._password = generate_password_hash(
+            password, current_app.config['BCRYPT_LOG_ROUNDS'])
 
     def verify_password(self, password):
-        pwhash = bcrypt.hashpw(password.encode("UTF-8"), self.password)
-        return self.password == pwhash
+        return check_password_hash(self._password, password)
+
+    def __str__(self):
+        return "User(id='%s')" % self.id
 
 
 class Org(db.Model, Dictable):
@@ -67,7 +77,7 @@ class Org(db.Model, Dictable):
     id = db.Column(UUID, primary_key=True)
     name = db.Column(db.String)
     mission = db.Column(db.String)
-    location_id = db.Column(UUID, ForeignKey("locations.id"))
+    location_id = db.Column(db.Integer, ForeignKey("locations.id"))
     location = db.relationship("Location", uselist=False)
     phone = db.Column(db.String)
     email = db.Column(db.String)
@@ -93,7 +103,7 @@ class Location(db.Model, Dictable):
     Location represents a geographical location (crazy right?))
     """
     __tablename__ = 'locations'
-    id = db.Column(UUID, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     address = db.Column(db.String)
     city = db.Column(db.String)
     country = db.Column(db.String)
@@ -104,5 +114,6 @@ class Event(db.Model, Dictable):
     __tablename__ = 'events'
     id = db.Column(UUID, primary_key=True)
     name = db.Column(db.String)
-    location_id = db.Column(UUID, ForeignKey("locations.id"))
+    org_id = db.Column(UUID, ForeignKey("orgs.id"))
+    location_id = db.Column(db.Integer, ForeignKey("locations.id"))
     location = db.relationship("Location", uselist=False)

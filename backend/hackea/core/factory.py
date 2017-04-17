@@ -5,13 +5,12 @@
     app factory function
 """
 
-
-
 import os
 import sys
 import logging
 from flask import Flask
 from . import db
+
 
 def create_app(package_name, settings_module=None, settings_override=None):
     app = Flask(package_name)
@@ -33,7 +32,6 @@ def create_app(package_name, settings_module=None, settings_override=None):
         app.config['DATA_DIR'],
         app.config['LOGGING_DIR']
     )
-
 
     for path in dirs:
         try:

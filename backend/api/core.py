@@ -5,7 +5,7 @@
     API core
 """
 
-from hackea.core import factory, db
+from hackea.core import db
 from hackea.models import User
 import flask_restful as restful
 from sqlalchemy.exc import OperationalError
@@ -14,17 +14,17 @@ from werkzeug.exceptions import ServiceUnavailable
 
 class HackeaAPI(object):
     """An API class that registers Users and Organizations"""
-    prefix = 'api'
     _ping_uri = '/_ping'
 
     def __init__(self, app=None):
         self.app = None
-        self._restful_api = restful.Api(app, prefix="/%s" % self.prefix)
+        self._restful_api = restful.Api(app)
         if app:
             self.init_app(app)
 
     def init_app(self, app):
         self.app = app
+        app.config.from_pyfile('settings.py')
         self._restful_api.init_app(app)
 
         if 'ping' not in self.app.view_functions:
@@ -47,4 +47,4 @@ class HackeaAPI(object):
         if self._test_db():
             return 'OK'
         else:
-            raise e.ServiceUnavailable
+            raise ServiceUnavailable
