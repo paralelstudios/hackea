@@ -27,13 +27,21 @@ org_owners_table = db.Table('org_owners',
                                       ForeignKey('orgs.id')))
 
 
-event_attendance_table = db.Table('event_attendances',
-                                  db.Column('user_id', UUID,
-                                            ForeignKey('users.id')),
-                                  db.Column('event_id', UUID,
-                                            ForeignKey('events.id')),
-                                  db.Column('reviews', JSONB),
-                                  db.Column('as_volunteer', db.Boolean))
+follower_followee_table = db.Table('follows',
+                                   db.Column('user_id', UUID,
+                                             ForeignKey('users.id')),
+                                   db.Column('org_id', UUID,
+                                             ForeignKey('orgs.id')))
+
+
+class EventAttendance(db.Model, Dictable):
+    __tablename_ = 'event_attendances'
+    user_id = db.Column(UUID, ForeignKey('users.id'), primary_key=True)
+    event_id = db.Column(UUID, ForeignKey('events.id'), primary_key=True)
+    reviews = db.Column(JSONB)
+    as_volunteer = db.Column(db.Boolean)
+    attendee = db.relationship("User", back_populates="events")
+    event = db.relationship("Event", back_populates="attendees")
 
 
 class User(db.Model, Dictable):
@@ -47,12 +55,13 @@ class User(db.Model, Dictable):
     _password = db.Column(db.Binary)
     name = db.Column(db.String)
     phone = db.Column(db.String)
+    following = db.relationship(
+        "Org", secondary=follower_followee_table,
+        backref="followers")
     orgs = db.relationship(
         "Org", secondary=org_owners_table,
         backref="organizers")
-    attendances = db.relationship(
-        "Event", secondary=event_attendance_table,
-        backref="attendees")
+    events = db.relationship("EventAttendance", back_populates="attendee")
 
     @hybrid_property
     def password(self):
@@ -120,3 +129,4 @@ class Event(db.Model, Dictable):
     end_date = db.Column(db.DateTime)
     location_id = db.Column(db.Integer, ForeignKey("locations.id"))
     location = db.relationship("Location", uselist=False)
+    attendees = db.relationship("EventAttendance", back_populates="event")

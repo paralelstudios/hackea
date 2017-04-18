@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 from flask import make_response
+from flask_restful import abort
 from unidecode import unidecode
 from datetime import datetime
 from twilio import twiml
 import json
 from uuid import uuid4
-from aidex.models import User
+from aidex.models import User, Org
 
 
 def uuid():
@@ -70,3 +71,19 @@ def authenticate(email, password):
 def identity(payload):
     user_id = payload["identity"]
     return User.query.get(user_id)
+
+
+def get_entity(model, pk, update=False):
+    q = model.query
+    if update:
+        q = q.with_for_update()
+
+    entity = q.get(pk)
+    if not entity:
+        abort(400, "{} {} doesn't exist".format(model.__name__, pk))
+    return entity
+
+
+def check_existence(model, *conditions):
+    if model.query.filter(*conditions).first():
+        return True
