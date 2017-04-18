@@ -1,8 +1,8 @@
 """add basemodels
 
-Revision ID: 8e59a028473a
+Revision ID: e7168d60057c
 Revises: 
-Create Date: 2017-04-17 15:53:03.794272
+Create Date: 2017-04-18 13:55:38.945113
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '8e59a028473a'
+revision = 'e7168d60057c'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -23,12 +23,12 @@ def upgrade():
     sa.Column('address', sa.String(), nullable=True),
     sa.Column('city', sa.String(), nullable=True),
     sa.Column('country', sa.String(), nullable=True),
-    sa.Column('timezone', sa.String(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('users',
     sa.Column('id', postgresql.UUID(), nullable=False),
     sa.Column('email', sa.String(), nullable=True),
+    sa.Column('timestamp', sa.DateTime(), nullable=True),
     sa.Column('_password', sa.Binary(), nullable=True),
     sa.Column('name', sa.String(), nullable=True),
     sa.Column('phone', sa.String(), nullable=True),
@@ -41,9 +41,9 @@ def upgrade():
     sa.Column('location_id', sa.Integer(), nullable=True),
     sa.Column('phone', sa.String(), nullable=True),
     sa.Column('email', sa.String(), nullable=True),
-    sa.Column('registered', sa.Boolean(), nullable=True),
-    sa.Column('services', sa.String(), nullable=True),
-    sa.Column('created', sa.DateTime(), nullable=True),
+    sa.Column('services', postgresql.ARRAY(sa.String()), nullable=True),
+    sa.Column('established', sa.DateTime(), nullable=True),
+    sa.Column('timestamp', sa.DateTime(), nullable=True),
     sa.Column('fiveoone', sa.Boolean(), nullable=True),
     sa.Column('premium', sa.Boolean(), nullable=True),
     sa.ForeignKeyConstraint(['location_id'], ['locations.id'], ),
@@ -53,6 +53,9 @@ def upgrade():
     sa.Column('id', postgresql.UUID(), nullable=False),
     sa.Column('name', sa.String(), nullable=True),
     sa.Column('org_id', postgresql.UUID(), nullable=True),
+    sa.Column('timestamp', sa.DateTime(), nullable=True),
+    sa.Column('start_date', sa.DateTime(), nullable=True),
+    sa.Column('end_date', sa.DateTime(), nullable=True),
     sa.Column('location_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['location_id'], ['locations.id'], ),
     sa.ForeignKeyConstraint(['org_id'], ['orgs.id'], ),

@@ -23,7 +23,7 @@ _/users_
 		
 _/auth_
 
-* POST ~ Authenticate a user, expects JSON like:
+* POST ~ Authenticate a user and recieve a JWT, expects JSON like:
 		
 		REQUEST:
 		{

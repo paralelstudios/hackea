@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-    aidex
+    aidex models
     ~~~~~~
 """
 
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
 from sqlalchemy import ForeignKey
 from flask_bcrypt import generate_password_hash, check_password_hash
 from flask import current_app
@@ -43,6 +43,7 @@ class User(db.Model, Dictable):
     __tablename__ = 'users'
     id = db.Column(UUID, primary_key=True)
     email = db.Column(db.String)
+    timestamp = db.Column(db.DateTime)
     _password = db.Column(db.Binary)
     name = db.Column(db.String)
     phone = db.Column(db.String)
@@ -81,9 +82,9 @@ class Org(db.Model, Dictable):
     location = db.relationship("Location", uselist=False)
     phone = db.Column(db.String)
     email = db.Column(db.String)
-    registered = db.Column(db.Boolean)
-    services = db.Column(db.String)
-    created = db.Column(db.DateTime)
+    services = db.Column(ARRAY(db.String))
+    established = db.Column(db.DateTime)
+    timestamp = db.Column(db.DateTime)
     fiveoone = db.Column(db.Boolean)
     premium = db.Column(db.Boolean)
     products = db.relationship("Product", backref="org")
@@ -107,7 +108,6 @@ class Location(db.Model, Dictable):
     address = db.Column(db.String)
     city = db.Column(db.String)
     country = db.Column(db.String)
-    timezone = db.Column(db.String)
 
 
 class Event(db.Model, Dictable):
@@ -115,5 +115,8 @@ class Event(db.Model, Dictable):
     id = db.Column(UUID, primary_key=True)
     name = db.Column(db.String)
     org_id = db.Column(UUID, ForeignKey("orgs.id"))
+    timestamp = db.Column(db.DateTime)
+    start_date = db.Column(db.DateTime)
+    end_date = db.Column(db.DateTime)
     location_id = db.Column(db.Integer, ForeignKey("locations.id"))
     location = db.relationship("Location", uselist=False)
