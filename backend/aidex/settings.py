@@ -7,11 +7,12 @@
 
 import os
 
-ENVIRONMENT = 'local'
+ENVIRONMENT = os.environ.get('ENVIRONMENT', 'local')
 DEBUG = True
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 LOGGING_DIR = os.path.join(BASE_DIR, "log")
+BCRYPT_LOG_ROUNDS = 12
 
 # SQL DB settings
 DB_USER = os.environ.get('POSTGRES_ENV_POSTGRES_USER', 'aidex')

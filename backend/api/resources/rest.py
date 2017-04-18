@@ -1,3 +1,4 @@
+
 # -*- coding: utf-8 -*-
 """
     api.resources.rest
@@ -5,16 +6,13 @@
     REST API resources
 """
 from flask import request
-import json
 from jsonschema import validate, ValidationError
 from unidecode import unidecode
 from flask_restful import Resource
 from flask_jwt import jwt_required
 from werkzeug import exceptions as e
 from aidex.models import User, Org
-from api.helpers import (
-    DateTimeEncoder,
-    uuid, try_committing)
+from api.helpers import uuid, try_committing
 from aidex.core import db
 
 
@@ -81,7 +79,7 @@ class OrgsEndpoint(Validatable, Resource):
             org.as_dict()
             for org in Org.query.all()]
         return {"count": len(orgs),
-                "orgs": json.dumps(orgs, cls=DateTimeEncoder)}
+                "orgs": orgs}
 
     def post(self):
         self.validate_form(request.json)
