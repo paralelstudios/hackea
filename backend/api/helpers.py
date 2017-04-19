@@ -5,24 +5,7 @@ from unidecode import unidecode
 from datetime import datetime
 from twilio import twiml
 import json
-from uuid import uuid4
-from aidex.models import User, Org
-
-
-def uuid():
-    return str(uuid4())
-
-
-def try_committing(connection_reference):
-    """
-    Pass a scoped session or connection (anything with commit and rollback methods)
-    to this function, and it will try committing, with rollback on failure.
-    """
-    try:
-        connection_reference.commit()
-    except Exception as e:
-        connection_reference.rollback()
-        raise e
+from aidex.models import User
 
 
 def to_regex_or(*strs):
@@ -84,6 +67,7 @@ def get_entity(model, pk, update=False):
     return entity
 
 
-def check_existence(model, *conditions):
-    if model.query.filter(*conditions).first():
-        return True
+def check_if_org_owner(user, org):
+    if user not in org.organizers:
+        abort(403, "{} is not an organizer of {}, can't update".format(
+            user.email, org.name))

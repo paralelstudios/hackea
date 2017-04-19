@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from twilio import twiml
 from sqlalchemy import or_, and_
 from aidex.models import Org
-from api.helpers import (
+from ..helpers import (
     output_xml, twilio_send_not_found,
     to_regex_or, sms_org_format,
     clean_and_split, get_page_offset)

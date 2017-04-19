@@ -27,5 +27,5 @@ def create_app(package_name, **kwargs):
     jwt = JWT(app, authenticate, identity)  # noqa
     api._restful_api.representations['application/xml'] = output_xml
     api.register_resources(*sms.endpoints)
-    api.register_resources(*rest.endpoints)
+    api.register_resources(*rest.ENDPOINTS)
     return app
