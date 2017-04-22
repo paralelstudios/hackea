@@ -1,7 +1,12 @@
 from __future__ import with_statement
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import create_engine
 from logging.config import fileConfig
+import os
+from aidex.core.factory import create_app
+from aidex.core import db
+from aidex.models import *  # noqa
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -15,25 +20,23 @@ fileConfig(config.config_file_name)
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = None
+target_metadata = db.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-import os
-from aidex.core.factory import create_app
-from aidex.core import db
-from aidex.models import *
-app = create_app('backend')
 
-SQLALCHEMY_DATABASE_URI = os.getenv('SQLALCHEMY_DATABASE_URI', app.config.get('SQLALCHEMY_DATABASE_URI'))
 
-config.set_main_option(
-    'sqlalchemy.url',
-    SQLALCHEMY_DATABASE_URI
-)
-target_metadata = db.metadata
+def get_url():
+    url = os.getenv('SQLALCHEMY_DATABASE_URI')
+
+    if not url:
+        app = create_app('aidex')
+        url = app.config.get('SQLALCHEMY_DATABASE_URI')
+
+    return url
+
 
 def run_migrations_offline():
     """Run migrations in 'offline' mode.
@@ -47,7 +50,7 @@ def run_migrations_offline():
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = get_url()
     context.configure(
         url=url, target_metadata=target_metadata, literal_binds=True)
 
@@ -62,10 +65,7 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section),
-        prefix='sqlalchemy.',
-        poolclass=pool.NullPool)
+    connectable = create_engine(get_url())
 
     with connectable.connect() as connection:
         context.configure(
@@ -75,6 +75,7 @@ def run_migrations_online():
 
         with context.begin_transaction():
             context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()

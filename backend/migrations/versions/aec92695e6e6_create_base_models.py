@@ -1,8 +1,8 @@
-"""Add base models
+"""create base models
 
-Revision ID: e0a9b8b1ce19
+Revision ID: aec92695e6e6
 Revises: 
-Create Date: 2017-04-18 16:33:12.698655
+Create Date: 2017-04-21 15:53:24.599299
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = 'e0a9b8b1ce19'
+revision = 'aec92695e6e6'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -27,25 +27,25 @@ def upgrade():
     )
     op.create_table('users',
     sa.Column('id', postgresql.UUID(), nullable=False),
-    sa.Column('email', sa.String(), nullable=True),
-    sa.Column('timestamp', sa.DateTime(), nullable=True),
-    sa.Column('_password', sa.Binary(), nullable=True),
+    sa.Column('email', sa.String(), nullable=False),
+    sa.Column('timestamp', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('_password', sa.Binary(), nullable=False),
     sa.Column('name', sa.String(), nullable=True),
     sa.Column('phone', sa.String(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('orgs',
     sa.Column('id', postgresql.UUID(), nullable=False),
-    sa.Column('name', sa.String(), nullable=True),
-    sa.Column('mission', sa.String(), nullable=True),
+    sa.Column('name', sa.String(), nullable=False),
+    sa.Column('mission', sa.String(), nullable=False),
     sa.Column('location_id', sa.Integer(), nullable=True),
     sa.Column('phone', sa.String(), nullable=True),
-    sa.Column('email', sa.String(), nullable=True),
-    sa.Column('services', postgresql.ARRAY(sa.String()), nullable=True),
+    sa.Column('email', sa.String(), nullable=False),
+    sa.Column('services', postgresql.ARRAY(sa.String()), nullable=False),
     sa.Column('established', sa.DateTime(), nullable=True),
-    sa.Column('timestamp', sa.DateTime(), nullable=True),
-    sa.Column('fiveoone', sa.Boolean(), nullable=True),
-    sa.Column('premium', sa.Boolean(), nullable=True),
+    sa.Column('timestamp', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+    sa.Column('fiveoone', sa.Boolean(), server_default='f', nullable=True),
+    sa.Column('premium', sa.Boolean(), server_default='f', nullable=True),
     sa.ForeignKeyConstraint(['location_id'], ['locations.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -53,7 +53,7 @@ def upgrade():
     sa.Column('id', postgresql.UUID(), nullable=False),
     sa.Column('name', sa.String(), nullable=True),
     sa.Column('org_id', postgresql.UUID(), nullable=True),
-    sa.Column('timestamp', sa.DateTime(), nullable=True),
+    sa.Column('timestamp', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.Column('start_date', sa.DateTime(), nullable=True),
     sa.Column('end_date', sa.DateTime(), nullable=True),
     sa.Column('location_id', sa.Integer(), nullable=True),
@@ -86,7 +86,7 @@ def upgrade():
     sa.Column('user_id', postgresql.UUID(), nullable=False),
     sa.Column('event_id', postgresql.UUID(), nullable=False),
     sa.Column('reviews', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-    sa.Column('as_volunteer', sa.Boolean(), nullable=True),
+    sa.Column('as_volunteer', sa.Boolean(), server_default='f', nullable=True),
     sa.ForeignKeyConstraint(['event_id'], ['events.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('user_id', 'event_id')

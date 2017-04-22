@@ -7,8 +7,9 @@
 from toolz import dissoc
 from uuid import uuid4
 from dateparser import parse as dateparse
-from datetime import datetime
-from .models import Org, Location, User, Event
+from .models import (
+    Org, Location, User, Event,
+    EventAttendance)
 
 
 def uuid():
@@ -41,7 +42,6 @@ def create_org(data, new_location):
         id=uuid(),
         location=new_location,
         location_id=new_location.id,
-        timestamp=datetime.now(),
         **dissoc(data, "location")
     )
 
@@ -49,16 +49,20 @@ def create_org(data, new_location):
 def create_user(data):
     return User(
         id=uuid(),
-        timestamp=datetime.now(),
         **data)
 
 
 def create_event(data, new_location):
     return Event(
         id=uuid(),
-        timestamp=datetime.now(),
         location=new_location,
         location_id=new_location.id,
         start_date=dateparse(data["start_date"]),
         end_date=dateparse(data["end_date"]),
         **dissoc(data, "start_date", "end_date", "location"))
+
+
+def create_event_attendance(data, *attendees):
+    ea = EventAttendance(**data)
+    ea.attendees = attendees
+    return ea

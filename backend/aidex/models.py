@@ -3,10 +3,9 @@
     aidex models
     ~~~~~~
 """
-
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, func
 from flask_bcrypt import generate_password_hash, check_password_hash
 from flask import current_app
 from .core import db
@@ -39,7 +38,7 @@ class EventAttendance(db.Model, Dictable):
     user_id = db.Column(UUID, ForeignKey('users.id'), primary_key=True)
     event_id = db.Column(UUID, ForeignKey('events.id'), primary_key=True)
     reviews = db.Column(JSONB)
-    as_volunteer = db.Column(db.Boolean)
+    as_volunteer = db.Column(db.Boolean, server_default='f')
     attendee = db.relationship("User", back_populates="events")
     event = db.relationship("Event", back_populates="attendees")
 
@@ -50,9 +49,10 @@ class User(db.Model, Dictable):
     """
     __tablename__ = 'users'
     id = db.Column(UUID, primary_key=True)
-    email = db.Column(db.String)
-    timestamp = db.Column(db.DateTime)
-    _password = db.Column(db.Binary)
+    email = db.Column(db.String, nullable=False)
+    timestamp = db.Column(db.DateTime,
+                          server_default=func.now())
+    _password = db.Column(db.Binary, nullable=False)
     name = db.Column(db.String)
     phone = db.Column(db.String)
     following = db.relationship(
@@ -85,17 +85,17 @@ class Org(db.Model, Dictable):
     """
     __tablename__ = 'orgs'
     id = db.Column(UUID, primary_key=True)
-    name = db.Column(db.String)
-    mission = db.Column(db.String)
+    name = db.Column(db.String, nullable=False)
+    mission = db.Column(db.String, nullable=False)
     location_id = db.Column(db.Integer, ForeignKey("locations.id"))
     location = db.relationship("Location", uselist=False)
     phone = db.Column(db.String)
-    email = db.Column(db.String)
-    services = db.Column(ARRAY(db.String))
+    email = db.Column(db.String, nullable=False)
+    services = db.Column(ARRAY(db.String), nullable=False)
     established = db.Column(db.DateTime)
-    timestamp = db.Column(db.DateTime)
-    fiveoone = db.Column(db.Boolean)
-    premium = db.Column(db.Boolean)
+    timestamp = db.Column(db.DateTime, server_default=func.now())
+    fiveoone = db.Column(db.Boolean, server_default='f')
+    premium = db.Column(db.Boolean, server_default='f')
     products = db.relationship("Product", backref="org")
     events = db.relationship("Event", backref="org")
 
@@ -124,7 +124,7 @@ class Event(db.Model, Dictable):
     id = db.Column(UUID, primary_key=True)
     name = db.Column(db.String)
     org_id = db.Column(UUID, ForeignKey("orgs.id"))
-    timestamp = db.Column(db.DateTime)
+    timestamp = db.Column(db.DateTime, server_default=func.now())
     start_date = db.Column(db.DateTime)
     end_date = db.Column(db.DateTime)
     location_id = db.Column(db.Integer, ForeignKey("locations.id"))
