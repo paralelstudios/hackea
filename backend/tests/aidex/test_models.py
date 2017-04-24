@@ -159,6 +159,13 @@ def tests_event_attendee_relationship(org, session,
     session.commit()
     committed_event = Event.query.get(event.id)
     committed_event_a = EventAttendance.query.get((user.id, event.id))
+    committed_user = User.query.get(user.id)
     assert event_attendance in committed_event.attendees
+    assert event_attendance in committed_user.events
     assert user == committed_event_a.attendee
     assert event == committed_event_a.event
+
+    committed_event_a.query.delete()
+    session.commit()
+    assert event_attendance not in committed_event.attendees
+    assert event_attendance not in committed_user.events

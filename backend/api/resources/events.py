@@ -10,8 +10,10 @@ from toolz import valmap, dissoc, keyfilter
 from unidecode import unidecode
 from aidex.core import db
 from aidex.helpers import (
-    create_event, create_location, try_committing)
-from aidex.models import Org, User, Event
+    create_event, create_location, try_committing,
+    create_event_attendance)
+from aidex.models import (
+    Org, User, Event, EventAttendance)
 from .base import JWTEndpoint
 from ..helpers import get_entity, check_if_org_owner
 
@@ -115,6 +117,11 @@ class EventAttendanceEndpoint(JWTEndpoint):
     def _process_post(self, user, event):
         raise NotImplementedError
 
+    def _create_attendance(user, event, as_volunteer=False):
+        return create_event_attendance(
+            dict(user_id=user.id, event_id=event.id,
+                 as_volunteer=as_volunteer), user)
+
     def post(self):
         self.validate_form(request.json)
         self._process_post(
@@ -122,32 +129,53 @@ class EventAttendanceEndpoint(JWTEndpoint):
             get_entity(User, request.json["event_id"], update=True))
 
 
-class AttendEventEndpoint(EventAttendanceEndpoint, JWTEndpoint):
-    uri = "/attend"
+class AttendEventBaseEndpoint(EventAttendanceEndpoint):
+    uri = None
+    as_volunteer = None
 
     def _process_post(self, user, event):
-            pass
+        if get_entity(EventAttendance, (user.id, event.id)):
+            abort(401, "User {} is already attending Event {}".format(
+                user.id, event.id))
+        attendance = self._create_attendance(user, event, self.as_volunteer)
+        event.attendees.append(attendance)
+        db.session.add(attendance)
+        try_committing(db.session)
 
 
-class UnattendEventEndpoint(EventAttendanceEndpoint, JWTEndpoint):
+class AttendEventEndpoint(AttendEventBaseEndpoint):
+    uri = "/attend"
+    as_volunteer = False
+
+
+class UnattendEventEndpoint(EventAttendanceEndpoint):
     uri = "/unattend"
 
-    def _process_post(self):
-        pass
+    def _process_post(self, user, event):
+        attendance = get_entity(EventAttendance, (user.id, event.id), True)
+        if not attendance:
+            abort(401, "User {} not is attending Event {}, can't unattend".format(
+                user.id, event.id))
+        attendance.query.delete()
+        try_committing(db.session)
 
 
-class VolunteerEventEndpoint(EventAttendanceEndpoint, JWTEndpoint):
+class VolunteerEventEndpoint(AttendEventBaseEndpoint):
     uri = "/volunteer"
-
-    def _process_post(self):
-        pass
+    as_volunteer = True
 
 
 class UnvolunteerEventEndpoint(VolunteerEventEndpoint):
     uri = "/unvolunteer"
 
-    def _process_post(self):
-        pass
+    def _process_post(self, user, event):
+        attendance = get_entity(EventAttendance, (user.id, event.id), True)
+        if not (attendance and attendance.as_volunteer):
+            abort(401,
+                  """User {} not is attending or volunteering at Event {},
+                  can't unattend""".format(user.id, event.id))
+        attendance.as_volunteer = False
+        try_committing(db.session)
 
 
 ENDPOINTS = [EventEndPoint,
