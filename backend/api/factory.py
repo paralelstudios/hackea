@@ -15,13 +15,23 @@ from .core import AIDEXAPI
 from .resources import sms, rest
 
 
-def create_app(package_name, **kwargs):
-    app = factory.create_app(package_name, **kwargs)
-    app.config.from_object('settings.Config')
+def create_app(package_name, settings_module=None, settings_override=None, **kwargs):
+    app = factory.create_app(package_name,
+                             settings_module=settings_module,
+                             settings_override=settings_override,
+                             **kwargs)
+    app.config.from_object('api.settings')
+    if settings_module:
+        app.config.from_object(settings_module)
     if os.getenv('AIDEX_API_CONFIG_FILE'):
         app.config.from_envvar('AIDEX_API_CONFIG_FILE')
     app.json_encoder = DateTimeEncoder
     app.url_map.strict_slashes = False
+
+    if settings_override:
+        for key, value in settings_override:
+            if key.isupper():
+                app.config[key] = value
 
     api = AIDEXAPI(app)
     jwt = JWT(app, authenticate, identity)  # noqa
