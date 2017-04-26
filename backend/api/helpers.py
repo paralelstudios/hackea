@@ -63,11 +63,17 @@ def get_entity(model, pk, update=False):
 
     entity = q.get(pk)
     if not entity:
-        abort(400, "{} {} doesn't exist".format(model.__name__, pk))
+        abort(400, description="{} {} doesn't exist".format(model.__name__, pk))
     return entity
 
 
 def check_if_org_owner(user, org):
     if user not in org.organizers:
-        abort(403, "{} is not an organizer of {}, can't update".format(
+        abort(403, description="{} is not an organizer of {}, can't update".format(
             user.email, org.name))
+
+
+def clean_input(input):
+    if isinstance(input, (str, bytes)):
+        return unidecode(input)
+    return input

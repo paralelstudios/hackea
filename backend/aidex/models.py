@@ -3,20 +3,24 @@
     aidex models
     ~~~~~~
 """
+from toolz import valfilter
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
 from sqlalchemy import ForeignKey, func
+from sqlalchemy.orm.state import InstanceState
 from flask_bcrypt import generate_password_hash, check_password_hash
 from flask import current_app
 from .core import db
 
 
 class Dictable(object):
+    def _is_dictable(self, x):
+        if not isinstance(x, (InstanceState, db.Model)):
+            return True
+        return False
+
     def as_dict(self):
-        return {x: y
-                for (x, y)
-                in self.__dict__.items()
-                if x != "_sa_instance_state"}
+        return valfilter(self._is_dictable, dict(self.__dict__))
 
 
 org_owners_table = db.Table('org_owners',

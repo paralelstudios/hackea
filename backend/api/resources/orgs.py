@@ -4,14 +4,14 @@
     ~~~~~~~~~~~~~~~~
     Organization API resources
 """
-from flask import request
+from flask import request, jsonify
 from flask_restful import abort
-from unidecode import unidecode
 from toolz import dissoc, keyfilter, valmap
 from aidex.models import Org, User
 from aidex.core import db
-from aidex.helpers import try_committing, create_location, create_org
-from ..helpers import get_entity, check_if_org_owner
+from aidex.helpers import (
+    try_committing, create_location, create_org)
+from ..helpers import get_entity, check_if_org_owner, clean_input
 from .base import JWTEndpoint
 
 
@@ -22,7 +22,6 @@ class OrgsEndpoint(JWTEndpoint):
         "title": "org",
         "properties": {
             "user_id": {"type": "string"},
-            "org_id": {"type" "string"},
             "name": {"type": "string"},
             "email": {"type": "string"},
             "fiveoone": {"type": "string"},
@@ -48,28 +47,30 @@ class OrgsEndpoint(JWTEndpoint):
 
     def get(self):
         if "org_id" not in request.json:
-            abort(400, "org_id needed to get an org")
-        org = get_entity(Org, request["org_id"])
-        return org.as_dict()
+            abort(400, description="org_id needed to get an org")
+        org = get_entity(Org, request.json["org_id"])
+        return jsonify(org.as_dict())
 
     def _clean_data(self, data):
         relevant_data = keyfilter(
             lambda key: key in self.schema["properties"], data)
         cleaned_data = valmap(
-            unidecode, dissoc(relevant_data, "services", "location"))
+            clean_input, dissoc(relevant_data, "services", "location", "user_id"))
 
         if "services" in data:
-            cleaned_data["services"] = [unidecode(v) for v in data["services"]]
+            cleaned_data["services"] = [clean_input(v) for v in data["services"]]
         if "location" in data:
             relevant_loc_data = keyfilter(
                 lambda key: key in self.schema["properties"]["location"]["properties"],
                 data["location"])
             cleaned_data["location"] = valmap(
-                unidecode,
+                clean_input,
                 relevant_loc_data)
         return cleaned_data
 
     def put(self):
+        if not ("user_id" in request.json and "org_id" in request.json):
+            abort(400, description="org_id and user_id needed to update an org")
         user_id = request.json["user_id"]
         user = get_entity(User, user_id)
 
@@ -97,7 +98,7 @@ class OrgsEndpoint(JWTEndpoint):
         cleaned_data = self._clean_data(request.json)
         name = cleaned_data["name"]
         if Org.query.filter_by(name=name).first():
-            abort(409, "Org {} already exists".format(name))
+            abort(409, description="Org {} already exists".format(name))
 
         new_location = create_location(cleaned_data["location"])
         new_org = create_org(cleaned_data, new_location)

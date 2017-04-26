@@ -5,6 +5,8 @@
     test utility functions
 """
 from uuid import UUID
+from api.helpers import DateTimeEncoder
+import json
 
 
 def validate_uuid(s):
@@ -36,3 +38,8 @@ def assert_inequal_keys(d1, d2, *keys):
 
 class TestFixtureException(Exception):
     pass
+
+
+def jsonify_req(data):
+    return dict(data=json.dumps(data, cls=DateTimeEncoder),
+                content_type='application/json')

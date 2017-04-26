@@ -28,7 +28,7 @@ def try_committing(connection_reference):
         raise e
 
 
-def check_existence(model, pk=None, *conditions):
+def check_existence(model, *conditions):
     if model.query.filter(*conditions).first():
         return True
 
@@ -46,7 +46,7 @@ def create_org(data, new_location):
     )
 
 
-def create_user(data):
+def create_user(data=None):
     return User(
         id=uuid(),
         **data)

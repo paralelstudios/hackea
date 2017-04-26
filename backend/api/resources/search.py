@@ -10,15 +10,25 @@ from .base import JWTEndpoint
 
 class SearchEndpoint(JWTEndpoint):
     uri = "/search"
-
-    def post(self):
-        pass
-
-    def put(self):
-        pass
+    schema = {
+        "type": "object",
+        "properties": {
+            "event": {"type": "boolean"},
+            "keywords": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }},
+            "categories": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                }}},
+        "required": ["keywords"]
+    }
 
     def get(self):
-        pass
+        self.validate_form
 
 
 ENDPOINTS = [SearchEndpoint]

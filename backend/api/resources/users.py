@@ -35,17 +35,19 @@ class UsersEndpoint(Endpoint):
         return relevant_data
 
     def post(self):
+        print("recieved {}".format(request.json))
         self.validate_form(request.json)
         cleaned_data = self._clean_data(request.json)
+        print("cleaned and validated")
         if check_existence(User, User.email == cleaned_data['email']):
-            abort(400, 'User {} already exists'
+            abort(409, description='User {} already exists'
                   .format(cleaned_data['email']))
-
+        print("creating")
         new_user = create_user(cleaned_data)
 
         db.session.add(new_user)
         try_committing(db.session)
-
+        print("created and committed")
         return {"user_id": new_user.id}, 201
 
 
