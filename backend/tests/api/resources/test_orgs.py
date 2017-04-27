@@ -60,6 +60,7 @@ def test_org_put(client, session, ingested_org, ingested_user, auth_key, user_da
 def test_org_get(client, ingested_org, auth_key):
     data = jsonify_req(dict(org_id=ingested_org.id))
     resp = client.get('/orgs', headers=auth_key, **data)
-    assert_equal_keys(ingested_org.as_dict(), resp.json,
-                      *dissoc(ingested_org.as_dict(), "timestamp").keys())
-    assert ingested_org.timestamp == dateparse(resp.json["timestamp"])
+    assert "events" in resp.json and "org" in resp.json
+    assert_equal_keys(ingested_org.as_dict(), resp.json["org"],
+                      *dissoc(ingested_org.as_dict(), "timestamp", "events").keys())
+    assert ingested_org.timestamp == dateparse(resp.json["org"]["timestamp"])

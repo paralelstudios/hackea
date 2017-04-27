@@ -46,7 +46,6 @@ class UsersEndpoint(Endpoint):
 
         db.session.add(new_user)
         try_committing(db.session)
-        print("created and committed")
         return {"user_id": new_user.id}, 201
 
 

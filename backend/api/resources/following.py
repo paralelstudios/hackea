@@ -28,7 +28,7 @@ class FollowEndpoint(JWTEndpoint):
         if "org_id" not in data:
             abort(400, "Need an org_id to (un)follow")
         user = get_entity(User, data['user_id'], True)
-        org = get_entity(Org, data['org_id'], True)
+        org = get_entity(Org, data['org_id'], True, lazyloaded="locations")
 
         return user, org
 

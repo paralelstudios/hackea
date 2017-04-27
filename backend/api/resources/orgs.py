@@ -51,7 +51,9 @@ class OrgsEndpoint(JWTEndpoint):
         if "org_id" not in request.json:
             abort(400, description="org_id needed to get an org")
         org = get_entity(Org, request.json["org_id"])
-        return jsonify(org.as_dict())
+        return jsonify({
+            "org": org,
+            "events": [event for event in org.events if event.is_active()]})
 
     def _handle_location_data(self, data):
         is_location_property = lambda x: x in self.schema["properties"]["locations"]["items"]["properties"]  # noqa
@@ -79,7 +81,7 @@ class OrgsEndpoint(JWTEndpoint):
         user = get_entity(User, user_id)
 
         org_id = request.json["org_id"]
-        org = get_entity(Org, org_id, True)
+        org = get_entity(Org, org_id, True, "locations")
         check_if_org_owner(user, org)
 
         cleaned_data = self._clean_data(request.json)
@@ -88,7 +90,7 @@ class OrgsEndpoint(JWTEndpoint):
             setattr(org, key, value)
 
         if "locations" in cleaned_data:
-            new_locations = [create_location(loc, org_id=org.id) for loc in cleaned_data["locations"]]
+            new_locations = [create_location(loc) for loc in cleaned_data["locations"]]
             org.locations = new_locations
 
         try_committing(db.session)
@@ -107,7 +109,7 @@ class OrgsEndpoint(JWTEndpoint):
             abort(409, description="Org {} already exists".format(name))
 
         new_org = create_org(cleaned_data)
-        new_locations = [create_location(loc, org_id=new_org.id) for loc in cleaned_data["locations"]]
+        new_locations = [create_location(loc) for loc in cleaned_data["locations"]]
         new_org.locations = new_locations
         new_org.organizers = [user]
 

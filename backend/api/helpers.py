@@ -7,9 +7,11 @@
 from flask import make_response
 from flask_restful import abort
 from unidecode import unidecode
+from sqlalchemy.orm import lazyload
 from datetime import datetime
 from twilio import twiml
 import json
+from aidex.core import db
 from aidex.models import User
 
 
@@ -43,6 +45,8 @@ class DateTimeEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, datetime):
             return o.isoformat()
+        if isinstance(o, db.Model):
+            return o.as_dict()
         return json.JSONEncoder.default(self, o)
 
 
@@ -61,8 +65,10 @@ def identity(payload):
     return User.query.get(user_id)
 
 
-def get_entity(model, pk, update=False):
+def get_entity(model, pk, update=False, lazyloaded=None):
     q = model.query
+    if lazyloaded:
+        q = q.options(lazyload(lazyloaded))
     if update:
         q = q.with_for_update()
 

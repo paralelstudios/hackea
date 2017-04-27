@@ -67,7 +67,8 @@ class EventEndPoint(JWTEndpoint):
     def post(self):
         self.validate_form(request.json)
 
-        org = get_entity(Org, request.json["org_id"], update=True)
+        org = get_entity(Org, request.json["org_id"],
+                         update=True, lazyloaded="locations")
         user = get_entity(User, request.json["user_id"])
         check_if_org_owner(user, org)
 
@@ -85,7 +86,7 @@ class EventEndPoint(JWTEndpoint):
                   description="Event {} already exists".format(request.json["name"]))
         cleaned_data = self._clean_data(request.json)
         new_event = create_event(cleaned_data)
-        location = create_location(cleaned_data["location"], event_id=new_event)
+        location = create_location(cleaned_data["location"])
         new_event.location = location
         org.events.append(new_event)
 
@@ -108,9 +109,10 @@ class EventEndPoint(JWTEndpoint):
                 "user_id" in request.json and
                 "event_id" in request.json):
             abort(400, "org_id, user_id, and event_id needed to update events")
-        org = get_entity(Org, request.json["org_id"], update=True)
+        org = get_entity(Org, request.json["org_id"])
         user = get_entity(User, request.json["user_id"])
-        event = get_entity(Event, request.json["event_id"], update=True)
+        event = get_entity(Event, request.json["event_id"],
+                           update=True, lazyloaded="location")
 
         check_if_org_owner(user, org)
         if event not in org.events:
@@ -124,16 +126,15 @@ class EventEndPoint(JWTEndpoint):
 
         if "location" in cleaned_data:
             new_location = create_location(cleaned_data["location"])
-            db.session.add(new_location)
             event.location = new_location
-            event.location_id = new_location.id
+        try_committing(db.session)
         return {"event_id": event.id}, 200
 
     def get(self):
         if "event_id" not in request.json:
             abort(400, description="event_id needed to get event")
         event = get_entity(Event, request.json["event_id"])
-        return jsonify(event.as_dict())
+        return jsonify(event)
 
 
 class AttendEventBaseEndpoint(JWTEndpoint):
@@ -146,9 +147,9 @@ class AttendEventBaseEndpoint(JWTEndpoint):
             "user_id": {"type": "string"},
             "event_id": {"type": "string"}}}
 
-    def _get_entites(user_id, event_id):
+    def _get_entites(self, user_id, event_id):
         return get_entity(User, user_id, update=True), \
-            get_entity(Event, event_id, update=True)
+            get_entity(Event, event_id, update=True, lazyloaded="location")
 
     def _create_attendance(self, user, event, as_volunteer=False):
         return create_event_attendance(
@@ -158,8 +159,7 @@ class AttendEventBaseEndpoint(JWTEndpoint):
     def post(self):
         self.validate_form(request.json)
         attendance = self._process_post(
-            get_entity(User, request.json["user_id"], update=True),
-            get_entity(Event, request.json["event_id"], update=True))
+            *self._get_entites(request.json["user_id"], request.json["event_id"]))
         return dict(user_id=attendance.user_id,
                     event_id=attendance.event_id,
                     volunteer=attendance.as_volunteer)

@@ -1,8 +1,8 @@
 """create base models
 
-Revision ID: 50a24a4b2091
+Revision ID: e3821e392301
 Revises: 
-Create Date: 2017-04-27 11:02:45.264455
+Create Date: 2017-04-27 16:13:06.279692
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '50a24a4b2091'
+revision = 'e3821e392301'
 down_revision = None
 branch_labels = None
 depends_on = None

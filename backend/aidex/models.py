@@ -3,10 +3,11 @@
     aidex models
     ~~~~~~
 """
-from toolz import valfilter, valmap
+from toolz import valfilter
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
 from sqlalchemy import ForeignKey, func
+from datetime import datetime
 from sqlalchemy.orm.state import InstanceState
 from flask_bcrypt import generate_password_hash, check_password_hash
 from flask import current_app
@@ -19,14 +20,8 @@ class Dictable(object):
             return True
         return False
 
-    def _inner_as_dict(self, x):
-        if isinstance(x, db.Model):
-            return x.as_dict()
-        return x
-
     def as_dict(self):
-        return valmap(self._inner_as_dict,
-                      valfilter(self._is_dictable, dict(self.__dict__)))
+        return valfilter(self._is_dictable, dict(self.__dict__))
 
 
 org_owners_table = db.Table('org_owners',
@@ -98,7 +93,9 @@ class Org(db.Model, Dictable):
     id = db.Column(UUID, primary_key=True)
     name = db.Column(db.String, nullable=False)
     mission = db.Column(db.String, nullable=False)
-    locations = db.relationship("Location", back_populates="org")
+    locations = db.relationship("Location", back_populates="org",
+                                cascade="all, delete-orphan", passive_deletes=True,
+                                lazy="joined")
     phone = db.Column(db.String)
     email = db.Column(db.String, nullable=False)
     services = db.Column(ARRAY(db.String), nullable=False)
@@ -111,6 +108,10 @@ class Org(db.Model, Dictable):
                                cascade="all, delete-orphan", passive_deletes=True)
     events = db.relationship("Event", back_populates="org",
                              cascade="all, delete-orphan", passive_deletes=True)
+
+    @hybrid_property
+    def active_events(self):
+        return [e for e in self.events if e.is_active()]
 
 
 class Product(db.Model, Dictable):
@@ -147,6 +148,10 @@ class Event(db.Model, Dictable):
     end_date = db.Column(db.DateTime)
     org = db.relationship("Org", back_populates="events", single_parent=True)
     location = db.relationship("Location", uselist=False, back_populates="event",
-                               cascade="all, delete-orphan")
+                               cascade="all, delete-orphan", lazy="joined")
     attendees = db.relationship("EventAttendance", back_populates="event",
                                 cascade="all, delete-orphan", passive_deletes=True)
+
+    @hybrid_property
+    def is_active(self):
+        return self.start_date > datetime.now()
