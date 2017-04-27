@@ -110,7 +110,7 @@ def test_event_unattend(ingested_attendance, ingested_user,
 
     # test auth
     resp = client.post("/unattend", **data)
-    assert resp.status_code == 401
+    assert resp.status_code == 409
 
 
 @pytest.mark.functional
@@ -149,4 +149,4 @@ def test_event_unvolunteer(ingested_attendance, ingested_user,
 
     # test dup
     resp = client.post("/unvolunteer", headers=auth_key, **data)
-    assert resp.status_code == 401
+    assert resp.status_code == 409

@@ -172,7 +172,7 @@ class AttendEventBaseEndpoint(JWTEndpoint):
         elif not self._to_attend:
             attendance.query.delete()
         elif not self._as_volunteer and attendance and not attendance.as_volunteer and attendance and self._to_attend:
-            abort(401,
+            abort(409,
                   description="User {} is not volunteering at Event {}".format(
                       user.id, event.id))
         elif not self._as_volunteer and attendance and self._to_attend:
@@ -182,11 +182,11 @@ class AttendEventBaseEndpoint(JWTEndpoint):
             abort(409, description="User {} is already volunteering Event {}".format(
                 user.id, event.id))
         elif not (self._as_volunteer or attendance or self._to_attend):
-            abort(401,
+            abort(409,
                   description="""User {} not is attending or volunteering at Event {},
                   can't unattend""".format(user.id, event.id))
         elif not self._to_attend and not attendance:
-            abort(401, "User {} not is attending Event {}, can't unattend".format(
+            abort(409, "User {} not is attending Event {}, can't unattend".format(
                 user.id, event.id))
         else:
             abort(418, description="a flying duck")

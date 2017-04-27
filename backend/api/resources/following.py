@@ -24,7 +24,7 @@ class FollowEndpoint(JWTEndpoint):
         "properties": {
             "user_id": {"type": "string"},
             "org_id": {"type": "string"}},
-        "required": ["user_id"]
+        "required": ["user_id", "org_id"]
     }
 
     def _get_entites(self, data):
@@ -39,10 +39,11 @@ class FollowEndpoint(JWTEndpoint):
         self.validate_form(request.json)
         user, org = self._get_entites(request.json)
         if org in user.following:
-            abort(409, "User {} is already following {}".format(user.email, org.name))
+            abort(409, description="User {} is already following {}".format(user.email, org.name))
         user.following.append(org)
         try_committing(db.session)
-        return 204
+        return {"user_id": user.id,
+                "org_id": org.id}, 200
 
     def get(self):
         self.validate_form(request.json)
@@ -67,10 +68,11 @@ class UnfollowEndpoint(FollowEndpoint):
         self.validate_form(request.json)
         user, org = self._get_entites(request.json)
         if org not in user.following:
-            abort(400, "User {} is not following {}".format(user.email, org.name))
+            abort(409, description="User {} is not following {}".format(user.email, org.name))
         user.following.remove(org)
         try_committing(db.session)
-        return 200
+        return {"user_id": user.id,
+                "org_id": org.id}, 200
 
 
 ENDPOINTS = [FollowEndpoint, UnfollowEndpoint]
