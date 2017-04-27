@@ -33,16 +33,16 @@ def check_existence(model, *conditions):
         return True
 
 
-def create_location(location):
-    return Location(**location)
+def create_location(location, org_id=None, event_id=None):
+    return Location(org_id=org_id, event_id=event_id,
+                    **location)
 
 
-def create_org(data, new_location):
+def create_org(data, *new_locations):
     return Org(
         id=uuid(),
-        location=new_location,
-        location_id=new_location.id,
-        **dissoc(data, "location")
+        locations=list(new_locations),
+        **dissoc(data, "locations")
     )
 
 
@@ -52,11 +52,10 @@ def create_user(data=None):
         **data)
 
 
-def create_event(data, new_location):
+def create_event(data, new_location=None):
     return Event(
         id=uuid(),
         location=new_location,
-        location_id=new_location.id,
         start_date=dateparse(data["start_date"]),
         end_date=dateparse(data["end_date"]),
         **dissoc(data, "start_date", "end_date", "location"))

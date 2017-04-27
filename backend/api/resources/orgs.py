@@ -33,16 +33,18 @@ class OrgsEndpoint(JWTEndpoint):
                     "type": "string"
                 }},
             "established": {"type": "string"},
-            "location": {
-                "type": "object",
-                "properties": {
-                    "address": {"type": "string"},
-                    "city": {"type": "string"},
-                    "country": {"type": "string"},
-                }
+            "locations": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "address": {"type": "string"},
+                        "city": {"type": "string"},
+                        "country": {"type": "string"},
+                    }}
             }
         },
-        "required": ["user_id", "name", "location", "services"]
+        "required": ["user_id", "name", "locations", "services"]
     }
 
     def get(self):
@@ -51,21 +53,23 @@ class OrgsEndpoint(JWTEndpoint):
         org = get_entity(Org, request.json["org_id"])
         return jsonify(org.as_dict())
 
+    def _handle_location_data(self, data):
+        is_location_property = lambda x: x in self.schema["properties"]["locations"]["items"]["properties"]  # noqa
+        cleaned_locs = [keyfilter(is_location_property, loc) for loc in data["locations"]]
+        return [valmap(
+            clean_input,
+            loc) for loc in cleaned_locs]
+
     def _clean_data(self, data):
         relevant_data = keyfilter(
             lambda key: key in self.schema["properties"], data)
         cleaned_data = valmap(
-            clean_input, dissoc(relevant_data, "services", "location", "user_id"))
+            clean_input, dissoc(relevant_data, "services", "locations", "user_id"))
 
         if "services" in data:
             cleaned_data["services"] = [clean_input(v) for v in data["services"]]
-        if "location" in data:
-            relevant_loc_data = keyfilter(
-                lambda key: key in self.schema["properties"]["location"]["properties"],
-                data["location"])
-            cleaned_data["location"] = valmap(
-                clean_input,
-                relevant_loc_data)
+        if "locations" in data:
+            cleaned_data["locations"] = self._handle_location_data(data)
         return cleaned_data
 
     def put(self):
@@ -79,13 +83,13 @@ class OrgsEndpoint(JWTEndpoint):
         check_if_org_owner(user, org)
 
         cleaned_data = self._clean_data(request.json)
-        for key, value in dissoc(cleaned_data, "location").items():
+
+        for key, value in dissoc(cleaned_data, "locations").items():
             setattr(org, key, value)
-        if "location" in cleaned_data:
-            new_location = create_location(cleaned_data["location"])
-            db.session.add(new_location)
-            org.location = new_location
-            org.location_id = new_location.id
+
+        if "locations" in cleaned_data:
+            new_locations = [create_location(loc, org_id=org.id) for loc in cleaned_data["locations"]]
+            org.locations = new_locations
 
         try_committing(db.session)
         return {"org_id": org.id, "user_id": user_id}, 200
@@ -95,16 +99,18 @@ class OrgsEndpoint(JWTEndpoint):
 
         user_id = request.json["user_id"]
         user = get_entity(User, user_id, True)
+
         cleaned_data = self._clean_data(request.json)
+
         name = cleaned_data["name"]
         if Org.query.filter_by(name=name).first():
             abort(409, description="Org {} already exists".format(name))
 
-        new_location = create_location(cleaned_data["location"])
-        new_org = create_org(cleaned_data, new_location)
+        new_org = create_org(cleaned_data)
+        new_locations = [create_location(loc, org_id=new_org.id) for loc in cleaned_data["locations"]]
+        new_org.locations = new_locations
         new_org.organizers = [user]
 
-        db.session.add(new_location)
         db.session.add(new_org)
         try_committing(db.session)
 

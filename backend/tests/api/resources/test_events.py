@@ -110,6 +110,10 @@ def test_event_unattend(ingested_attendance, ingested_user,
 
     # test auth
     resp = client.post("/unattend", **data)
+    assert resp.status_code == 401
+
+    # test dup
+    resp = client.post("/unattend", headers=auth_key, **data)
     assert resp.status_code == 409
 
 

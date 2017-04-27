@@ -33,22 +33,21 @@ def test_user_model_commit(user, session):
 
 @pytest.mark.functional
 def test_org_location_model_commit(org, session, location):
-    session.add(location)
+    org.locations.append(location)
     session.add(org)
     session.commit()
     committed_org = Org.query.get(org.id)
     committed_location = Location.query.get(location.id)
     assert assert_equal_keys(
         org.as_dict(), committed_org.as_dict(),
-        "email", "phone", "services", "location_id")
+        "email", "phone", "services")
     assert validate_uuid(committed_org.id)
     assert isinstance(committed_org.timestamp, datetime)
-    assert org.location == committed_location
+    assert committed_location in org.locations
 
 
 @pytest.mark.functional
 def test_org_owner_relationship(org, user, session):
-    session.add(user)
     org.organizers.append(user)
     session.add(org)
     session.commit()
@@ -63,14 +62,12 @@ def test_event_commit_and_org_relationship(org, event, location, session):
     org.events.append(event)
     session.add(org)
     session.add(event)
-    session.add(location)
     session.commit()
     committed_event = Event.query.get(event.id)
     committed_org = Org.query.get(org.id)
     assert assert_equal_keys(event.as_dict(), committed_event.as_dict(),
                              "name", "org_id",
-                             "start_date", "end_date",
-                             "location_id")
+                             "start_date", "end_date")
     assert isinstance(committed_event.timestamp, datetime)
     assert committed_event.location == location
     assert committed_event in committed_org.events
@@ -81,7 +78,6 @@ def tests_event_attendee_relationship(org, session,
                                       event, user, event_attendance):
     org.events.append(event)
     event.attendees.append(event_attendance)
-    session.add(event)
     session.add(org)
     session.add(user)
     session.commit()

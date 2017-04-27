@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+"""
+    api.helpers
+    ~~~~~~~~~~~~~~~~
+    API helpers
+"""
 from flask import make_response
 from flask_restful import abort
 from unidecode import unidecode

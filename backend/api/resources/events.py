@@ -14,7 +14,7 @@ from aidex.helpers import (
     create_event, create_location, try_committing,
     create_event_attendance, check_existence)
 from aidex.models import (
-    Org, User, Event, EventAttendance)
+    Org, User, Event, EventAttendance, Location)
 from .base import JWTEndpoint
 from ..helpers import get_entity, check_if_org_owner
 
@@ -66,24 +66,29 @@ class EventEndPoint(JWTEndpoint):
 
     def post(self):
         self.validate_form(request.json)
+
         org = get_entity(Org, request.json["org_id"], update=True)
         user = get_entity(User, request.json["user_id"])
         check_if_org_owner(user, org)
+
         self._check_dates(request.json["start_date"], request.json["end_date"])
+
         if check_existence(Event,
                            Event.name == request.json["name"],
                            Event.org == org,
+                           Location.city == request.json["location"]["city"],
+                           Location.address == request.json["location"]["address"],
+                           Location.country == request.json["location"]["country"],
                            Event.start_date == request.json["start_date"],
                            Event.end_date == request.json["end_date"]):
             abort(409,
                   description="Event {} already exists".format(request.json["name"]))
         cleaned_data = self._clean_data(request.json)
-        location = create_location(cleaned_data["location"])
-        new_event = create_event(cleaned_data, location)
-
+        new_event = create_event(cleaned_data)
+        location = create_location(cleaned_data["location"], event_id=new_event)
+        new_event.location = location
         org.events.append(new_event)
-        db.session.add(location)
-        db.session.add(new_event)
+
         try_committing(db.session)
         return {"event_id": new_event.id}, 201
 
@@ -111,7 +116,9 @@ class EventEndPoint(JWTEndpoint):
         if event not in org.events:
             abort(403, description="Event {} does not belong to Org {}".format(
                 event.name, org.name))
+
         cleaned_data = self._clean_data(request.json)
+
         for key, value in dissoc(cleaned_data, "location").items():
             setattr(event, key, value)
 
@@ -165,11 +172,11 @@ class AttendEventBaseEndpoint(JWTEndpoint):
             attendance = self._create_attendance(user, event, self._as_volunteer)
             event.attendees.append(attendance)
             db.session.add(attendance)
-        elif self._as_volunteer and attendance and self._to_attend:
+        elif self._as_volunteer and attendance and self._to_attend and not attendance.as_volunteer:
             attendance.as_volunteer = True
         elif not self._as_volunteer and attendance and attendance.as_volunteer:
             attendance.as_volunteer = False
-        elif not self._to_attend:
+        elif not self._to_attend and attendance:
             attendance.query.delete()
         elif not self._as_volunteer and attendance and not attendance.as_volunteer and attendance and self._to_attend:
             abort(409,
@@ -190,7 +197,7 @@ class AttendEventBaseEndpoint(JWTEndpoint):
                 user.id, event.id))
         else:
             abort(418, description="a flying duck")
-        print("pass")
+
         try_committing(db.session)
         return attendance
 

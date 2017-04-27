@@ -31,7 +31,9 @@ def app():
 @pytest.yield_fixture(scope="session")
 def db(app):
     def teardown():
+        print("reflecting")
         _db.reflect()
+        print("dropping all")
         _db.drop_all()
 
     def buildup_alembic():
@@ -58,18 +60,22 @@ def db(app):
 
 @pytest.yield_fixture(scope="function")
 def session(db):
-    connection = db.engine.connect()
-    transaction = connection.begin()
-
-    options = dict(bind=connection, binds={})
-    session = db.create_scoped_session(options=options)
-
-    db.session = session
-
     def teardown():
         transaction.rollback()
         connection.close()
         session.remove()
+
+    try:
+        teardown()
+    except:
+        pass
+
+    print("starting session")
+
+    connection = db.engine.connect()
+    transaction = connection.begin()
+    session = db.create_scoped_session()
+    db.session = session
 
     yield session
     print("tearing down session")

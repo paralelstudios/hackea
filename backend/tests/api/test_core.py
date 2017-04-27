@@ -9,6 +9,6 @@ import pytest
 
 
 @pytest.mark.functional
-def test_ping(client):
+def test_ping(client, session):
     resp = client.get("/_ping")
     assert resp.status_code == 200

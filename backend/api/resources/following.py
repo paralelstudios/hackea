@@ -4,10 +4,7 @@
     ~~~~~~~~~~~~~~~~
     Following API resources
 """
-
-
-from flask import request
-
+from flask import request, jsonify
 from flask_restful import abort
 from aidex.models import User, Org
 from aidex.helpers import try_committing
@@ -46,11 +43,12 @@ class FollowEndpoint(JWTEndpoint):
                 "org_id": org.id}, 200
 
     def get(self):
-        self.validate_form(request.json)
+        if "user_id" not in request.json:
+            abort(400, description="User id need to find user's follows")
         user = get_entity(User, request.json["user_id"])
         followed_orgs = [org.as_dict() for org in user.following]
-        return {"count": len(followed_orgs),
-                "followed_orgs": followed_orgs}
+        return jsonify({"count": len(followed_orgs),
+                        "followed_orgs": followed_orgs})
 
 
 class UnfollowEndpoint(FollowEndpoint):

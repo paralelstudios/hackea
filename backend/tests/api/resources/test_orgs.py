@@ -14,7 +14,7 @@ from ...helpers import jsonify_req, assert_equal_keys
 
 @pytest.mark.functional
 def test_org_post(client, ingested_user, org_data, location_data, auth_key):
-    data = jsonify_req(merge(org_data, dict(location=location_data, user_id=ingested_user.id)))
+    data = jsonify_req(merge(org_data, dict(locations=[location_data], user_id=ingested_user.id)))
     resp = client.post('/orgs', headers=auth_key, **data)
     assert resp.status_code == 201
     assert "org_id" in resp.json and "user_id" in resp.json
@@ -22,6 +22,8 @@ def test_org_post(client, ingested_user, org_data, location_data, auth_key):
     org = Org.query.get(org_id)
     assert ingested_user in org.organizers
     assert assert_equal_keys(org_data, org.as_dict(), *org_data.keys())
+    assert org.locations
+    assert org.locations[0].org_id == org.id
 
     # test dup
     resp = client.post('orgs', headers=auth_key, **data)
