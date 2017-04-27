@@ -168,6 +168,7 @@ class AttendEventBaseEndpoint(JWTEndpoint):
         attendance = EventAttendance.query \
                                     .with_for_update() \
                                     .get((user.id, event.id))
+        error = None
         if self._to_attend and not attendance:
             attendance = self._create_attendance(user, event, self._as_volunteer)
             event.attendees.append(attendance)
@@ -179,25 +180,24 @@ class AttendEventBaseEndpoint(JWTEndpoint):
         elif not self._to_attend and attendance:
             attendance.query.delete()
         elif not self._as_volunteer and attendance and not attendance.as_volunteer and attendance and self._to_attend:
-            abort(409,
-                  description="User {} is not volunteering at Event {}".format(
-                      user.id, event.id))
+            error = "User {} is not volunteering at Event {}".format(
+                      user.id, event.id)
         elif not self._as_volunteer and attendance and self._to_attend:
-            abort(409, description="User {} is already attending Event {}".format(
-                user.id, event.id))
+            error = "User {} is already attending Event {}".format(
+                user.id, event.id)
         elif self._as_volunteer and attendance and attendance.as_volunteer:
-            abort(409, description="User {} is already volunteering Event {}".format(
-                user.id, event.id))
+            error = "User {} is already volunteering Event {}".format(
+                user.id, event.id)
         elif not (self._as_volunteer or attendance or self._to_attend):
-            abort(409,
-                  description="""User {} not is attending or volunteering at Event {},
-                  can't unattend""".format(user.id, event.id))
+            error = """User {} not is attending or volunteering at Event {},
+                  can't unattend""".format(user.id, event.id)
         elif not self._to_attend and not attendance:
-            abort(409, "User {} not is attending Event {}, can't unattend".format(
-                user.id, event.id))
+            error = "User {} not is attending Event {}, can't unattend".format(
+                user.id, event.id)
         else:
-            abort(418, description="a flying duck")
-
+            error = "a flying duck"
+        if error:
+            abort(409, description=error)
         try_committing(db.session)
         return attendance
 
