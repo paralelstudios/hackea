@@ -2,7 +2,6 @@ from aidex.settings import BASE_DIR
 
 DEBUG = False
 TESTING = True
-
 DB_USER = "aidex"
 DB_NAME = "aidex-test"
 DB_PASSWORD = "aidex"

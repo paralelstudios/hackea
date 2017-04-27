@@ -3,7 +3,7 @@ from uuid import uuid4
 from toolz import dissoc
 from aidex.core import db
 from aidex.models import Org
-from api.helper import clean_and_split
+from api.helpers import clean_and_split
 from flask_script import Command, Option
 import csv
 from unidecode import unidecode

@@ -32,10 +32,6 @@ def clean_and_split(s):
     return [unidecode(x.strip().lower()) for x in s.split(',') if x]
 
 
-def sms_org_format(org):
-    return "{name} tel: {phone}".format(name=org.name, phone=org.phone)
-
-
 class AIDEXJsonEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, datetime):
@@ -46,7 +42,7 @@ class AIDEXJsonEncoder(json.JSONEncoder):
 
 
 def get_page_offset(page, limit):
-    return (page * limit) - limit
+    return (page * limit) - limit if page else page
 
 
 def authenticate(email, password):

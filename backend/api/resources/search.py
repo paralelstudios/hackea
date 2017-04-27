@@ -6,7 +6,6 @@
 """
 from flask import request, jsonify
 from aidex.queries import filter_orgs
-from aidex.core import db
 from aidex.models import Org
 from .base import JWTEndpoint
 from ..helpers import get_page_offset
@@ -47,7 +46,7 @@ class SearchEndpoint(JWTEndpoint):
 
     def get(self):
         self.validate_form(request.json)
-        query = filter_orgs(db.session.query(Org), **request.json)
+        query = filter_orgs(Org.query, **request.json)
         limit, offset = self._process_limit_and_offset(request.json)
         matches = query.limit(limit).offset(offset).all()
         return jsonify({

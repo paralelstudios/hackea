@@ -4,13 +4,18 @@
     ~~~~~~
 """
 import os
+import csv
 import pytest
+from toolz import dissoc
 from api.factory import create_app
 from aidex.core import db as _db
 from alembic.command import upgrade
 from alembic.config import Config
 from aidex.models import User, Org, Location, Event
 from ..helpers import TestFixtureException, jsonify_req
+from unidecode import unidecode
+from api.helpers import clean_and_split
+from aidex.helpers import create_location, uuid
 from sqlalchemy.exc import ProgrammingError
 
 
@@ -130,3 +135,42 @@ def ingested_attendance(ingested_event, event_attendance, session):
     session.add(event_attendance)
     session.commit()
     return event_attendance
+
+
+@pytest.fixture()
+def orgs_sample(session, app):
+    def _create_org(row):
+        boolean_keys = {'registered', 'fiveoone'}
+        array_keys = {'services', 'categories'}
+        location_key = 'cities'
+        new_org = {}
+        locations = []
+        for key, v in row.items():
+            if key in boolean_keys:
+                new_org[key] = True if ('s' in row[key] or 'y' in row[key]) else False
+            elif key in array_keys:
+                new_org[key] = clean_and_split(row[key])
+            elif key == location_key:
+                locations += [create_location(dict(city=city))
+                              for city in clean_and_split(row[key])]
+            else:
+                new_org[key] = unidecode(v)
+        org_model = Org(id=uuid(),
+                        **dissoc(new_org,
+                                 "desires", "fb", "registered",
+                                 "candidates", "cities"))
+        org_model.locations = locations
+        session.add(org_model)
+        session.commit()
+
+    columns = ['timestamp', 'name', 'mission', 'cities',
+               'phone', 'email', 'fb', 'registered', 'desires', 'services',
+               'candidates', 'fiveoone', 'categories']
+    path = os.path.join(app.config["BASE_DIR"], "tests/data/org-sample.csv")
+    with open(path) as csvfile:
+        reader = csv.DictReader(csvfile, columns)
+        orgs = [
+            _create_org(row)
+            for row in reader
+            if not Org.query.filter_by(name=unidecode(row['name'])).first()]
+    print("ingested {} orgs for sample set".format(len(orgs)))

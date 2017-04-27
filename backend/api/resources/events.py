@@ -196,6 +196,7 @@ class AttendEventBaseEndpoint(JWTEndpoint):
                 user.id, event.id)
         else:
             error = "a flying duck"
+
         if error:
             abort(409, description=error)
         try_committing(db.session)

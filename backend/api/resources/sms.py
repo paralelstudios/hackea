@@ -9,41 +9,34 @@ from flask_restful import Resource
 from unidecode import unidecode
 from datetime import datetime, timedelta
 from twilio import twiml
-from sqlalchemy import or_, and_
 from aidex.models import Org
-from aidex.helpers import to_regex_or
+from aidex.queries import filter_orgs
 from ..helpers import (
     output_xml, twilio_send_not_found,
-    sms_org_format,
     clean_and_split, get_page_offset)
 
 
 class SMSOrgEndpoint(Resource):
     uri = '/sms/orgs'
     representations = {'application/xml': output_xml}
+    _default_limit = 3
+    _not_found_msg =  \
+        """Gracias por utilizar AIDEX
+        No encontramos su criterio.\nConsejos:
+        Escribe palabras claves (separadas por una coma)
+        de la org que
+        buscas, si deseas puedes buscar dentro
+        de un municipio escribe "/"; seguido del
+        municipio. Ej: educacion/San Juan. :)"""
 
-    def _process_query(self, query):
-        key_words = query[0]
-        locs = query[1] if len(query) > 1 else None
-        kw_conditions, loc_conditions = [], []
-        kw_regex = to_regex_or(*clean_and_split(query[0]))
+    def _org_row_format(self, org):
+        return "{name} tel: {phone}".format(name=org.name, phone=org.phone)
 
-        if key_words:
-            kw_conditions += [
-                Org.name.op('~*')(kw_regex),
-                Org.services.op('~*')(kw_regex),
-                Org.mission.op('~*')(kw_regex)
-            ]
-
-        if locs:
-            loc_regex = to_regex_or(*clean_and_split(locs))
-            loc = Org.location
-            loc_conditions += [
-                loc.city.op('~*')(loc_regex),
-                loc.country.op('~*')(loc_regex)
-            ]
-
-        return and_(or_(*kw_conditions), or_(*loc_conditions))
+    def _process_query(self, body):
+        raw_query = body.split('/')
+        keywords = clean_and_split(raw_query[0])
+        cities = clean_and_split(raw_query[1]) if len(raw_query) > 1 else None
+        return keywords, cities
 
     def _process_body(self, body):
         page = int(request.cookies.get('page', 0))
@@ -56,25 +49,34 @@ class SMSOrgEndpoint(Resource):
 
     def post(self):
         raw_body = request.args.get('Body') or request.form.get('Body')
-        print(raw_body)
+
         body, page = self._process_body(raw_body)
 
         if not body or body == "guia":
-            return twilio_send_not_found(
-                'favor de formar el mensaje como "causa(s,)/municipio(s,)"')
+            return twilio_send_not_found(self._not_found_msg)
 
-        query = body.split('/')
-        page_offset = get_page_offset(page, self.limit) if page > 0 else page
-        conditions = self._process_query(query)
-        orgs = list(Org.query.filter(conditions).offset(page_offset))
-        if not orgs:
-            return twilio_send_not_found("No encontramos nada :(")
+        offset = get_page_offset(page, self._default_limit)
+        keywords, cities = self._process_query_str(body)
+        query = filter_orgs(Org.query, keywords=keywords, cities=cities)
+        count = query.count()
+        if not count:
+            return twilio_send_not_found(self._not_found_msg)
 
-        org_names = [sms_org_format(org) for org in orgs]
+        results = [self._org_row_format(org)
+                   for org in
+                   query.limit(self._default_limit).offset(offset)]
 
         message = '\n'.join(
-            ['Organizaciones encontrado bajo "{}":'.format(body)] +
-            org_names)
+            ['Encontramos {} organizaciones bajo "{}" (mostrando {}):'.format(
+                count,
+                body,
+                self._default_limit)] +
+            results)
+
+        if count - offset > self._default_limit:
+            message += '\nPara más resultados, responda con "+"'
+        else:
+            message += '\nNo hay más resultados'
 
         resp = twiml.Response()
         resp.message(message)
@@ -83,11 +85,12 @@ class SMSOrgEndpoint(Resource):
     def _process_response(self, resp, body, page):
         out_resp = make_response(str(resp))
         expires = datetime.utcnow() + timedelta(hours=4)
-        out_resp.set_cookie(
-            'query',
-            body,
-            expires=expires.strftime(
-                '%a, %d %b %Y %H:%M:%S GMT'))
+        if body not in {"guia", "+"}:
+            out_resp.set_cookie(
+                'query',
+                body,
+                expires=expires.strftime(
+                    '%a, %d %b %Y %H:%M:%S GMT'))
         out_resp.set_cookie(
             'page',
             str(page),
