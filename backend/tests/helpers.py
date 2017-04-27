@@ -5,7 +5,7 @@
     test utility functions
 """
 from uuid import UUID
-from api.helpers import DateTimeEncoder
+from api.helpers import AIDEXJsonEncoder
 import json
 
 
@@ -41,5 +41,5 @@ class TestFixtureException(Exception):
 
 
 def jsonify_req(data):
-    return dict(data=json.dumps(data, cls=DateTimeEncoder),
+    return dict(data=json.dumps(data, cls=AIDEXJsonEncoder),
                 content_type='application/json')

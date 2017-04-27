@@ -10,7 +10,7 @@ from flask_jwt import JWT
 from aidex.core import factory
 from .helpers import (
     output_xml, authenticate, identity,
-    DateTimeEncoder)
+    AIDEXJsonEncoder)
 from .core import AIDEXAPI
 from .resources import sms, rest
 
@@ -25,7 +25,7 @@ def create_app(package_name, settings_module=None, settings_override=None, **kwa
         app.config.from_object(settings_module)
     if os.getenv('AIDEX_API_CONFIG_FILE'):
         app.config.from_envvar('AIDEX_API_CONFIG_FILE')
-    app.json_encoder = DateTimeEncoder
+    app.json_encoder = AIDEXJsonEncoder
     app.url_map.strict_slashes = False
 
     if settings_override:

@@ -46,7 +46,7 @@ class FollowEndpoint(JWTEndpoint):
         if "user_id" not in request.json:
             abort(400, description="User id need to find user's follows")
         user = get_entity(User, request.json["user_id"])
-        followed_orgs = [org.as_dict() for org in user.following]
+        followed_orgs = [org for org in user.following]
         return jsonify({"count": len(followed_orgs),
                         "followed_orgs": followed_orgs})
 

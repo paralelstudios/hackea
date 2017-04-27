@@ -6,6 +6,7 @@
 """
 from toolz import dissoc
 from uuid import uuid4
+from unidecode import unidecode
 from dateparser import parse as dateparse
 from .models import (
     Org, Location, User, Event,
@@ -65,3 +66,8 @@ def create_event_attendance(data, *attendees):
     ea = EventAttendance(**data)
     ea.attendees = attendees
     return ea
+
+
+def to_regex_or(*strs):
+    """returns strs as an or regex, empty args will match anything!"""
+    return ".*(" + unidecode("|".join(strs)) + ").*"

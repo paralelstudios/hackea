@@ -15,11 +15,6 @@ from aidex.core import db
 from aidex.models import User
 
 
-def to_regex_or(*strs):
-    """returns strs as an or regex, empty args will match anything!"""
-    return ".*(" + "|".join(strs) + ").*"
-
-
 def twilio_send_not_found(message):
     response = twiml.Response()
     response.message(message)
@@ -41,7 +36,7 @@ def sms_org_format(org):
     return "{name} tel: {phone}".format(name=org.name, phone=org.phone)
 
 
-class DateTimeEncoder(json.JSONEncoder):
+class AIDEXJsonEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, datetime):
             return o.isoformat()

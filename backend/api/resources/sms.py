@@ -6,13 +6,15 @@
 """
 from flask import request, make_response
 from flask_restful import Resource
+from unidecode import unidecode
 from datetime import datetime, timedelta
 from twilio import twiml
 from sqlalchemy import or_, and_
 from aidex.models import Org
+from aidex.helpers import to_regex_or
 from ..helpers import (
     output_xml, twilio_send_not_found,
-    to_regex_or, sms_org_format,
+    sms_org_format,
     clean_and_split, get_page_offset)
 
 
@@ -50,14 +52,14 @@ class SMSOrgEndpoint(Resource):
             if not query:
                 return None, page
             return query, page + 1
-        return body, page
+        return unidecode(body), page
 
     def post(self):
         raw_body = request.args.get('Body') or request.form.get('Body')
         print(raw_body)
         body, page = self._process_body(raw_body)
 
-        if not body:
+        if not body or body == "guia":
             return twilio_send_not_found(
                 'favor de formar el mensaje como "causa(s,)/municipio(s,)"')
 
