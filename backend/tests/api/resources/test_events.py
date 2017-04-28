@@ -154,3 +154,50 @@ def test_event_unvolunteer(ingested_attendance, ingested_user,
     # test dup
     resp = client.post("/unvolunteer", headers=auth_key, **data)
     assert resp.status_code == 409
+
+
+@pytest.mark.functional
+def test_volunteers_get(client, auth_key,
+                        ingested_event, ingested_user, ingested_org,
+                        ingested_attendance):
+    volunteer_data = jsonify_req(dict(user_id=ingested_user.id,
+                                      event_id=ingested_event.id))
+    client.post("/volunteer", headers=auth_key, **volunteer_data)
+    data = jsonify_req(dict(org_id=ingested_org.id,
+                            user_id=ingested_user.id, event_id=ingested_event.id))
+    resp = client.get('/volunteers', headers=auth_key, **data)
+    assert "event_id" in resp.json and "volunteer_users" in resp.json
+    assert ingested_user.id == resp.json["volunteer_users"][0]["id"]
+
+    # test auth
+    resp = client.get('/volunteers', **data)
+    assert resp.status_code == 401
+
+    # test no volunteers
+    client.post("/unvolunteer", headers=auth_key, **volunteer_data)
+    resp = client.get('/volunteers', headers=auth_key, **data)
+    assert "event_id" in resp.json and "volunteer_users" in resp.json
+    assert not resp.json["volunteer_users"]
+
+
+@pytest.mark.functional
+def test_attendees_get(client, auth_key,
+                       ingested_event, ingested_user, ingested_org,
+                       ingested_attendance):
+    data = jsonify_req(dict(org_id=ingested_org.id,
+                            user_id=ingested_user.id, event_id=ingested_event.id))
+    resp = client.get('/attendees', headers=auth_key, **data)
+    assert "event_id" in resp.json and "attendee_users" in resp.json
+    assert ingested_user.id == resp.json["attendee_users"][0]["id"]
+
+    # test auth
+    resp = client.get('/attendees', **data)
+    assert resp.status_code == 401
+
+    # test no attendees
+    attendee_data = jsonify_req(dict(user_id=ingested_user.id,
+                                     event_id=ingested_event.id))
+    client.post("/unattend", headers=auth_key, **attendee_data)
+    resp = client.get('/attendees', headers=auth_key, **data)
+    assert "event_id" in resp.json and "attendee_users" in resp.json
+    assert not resp.json["attendee_users"]

@@ -16,13 +16,15 @@ from aidex.helpers import (
 from aidex.models import (
     Org, User, Event, EventAttendance, Location)
 from .base import JWTEndpoint
-from ..helpers import get_entity, check_if_org_owner
+from ..helpers import (
+    get_entity, check_if_org_owner,
+    get_event, check_if_org_event,
+    get_organizer_and_org)
 
 
 class EventEndPoint(JWTEndpoint):
     uri = "/events"
     schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
         "type": "object",
         "properties": {
             "org_id": {"type": "string"},
@@ -67,10 +69,10 @@ class EventEndPoint(JWTEndpoint):
     def post(self):
         self.validate_form(request.json)
 
-        org = get_entity(Org, request.json["org_id"],
-                         update=True, lazyloaded="locations")
-        user = get_entity(User, request.json["user_id"])
-        check_if_org_owner(user, org)
+        user, org = get_organizer_and_org(
+            request.json["user_id"],
+            request.json["org_id"],
+            update_org=True)
 
         self._check_dates(request.json["start_date"], request.json["end_date"])
 
@@ -222,8 +224,44 @@ class UnvolunteerEventEndpoint(VolunteerEventEndpoint):
     _as_volunteer = False
 
 
+class GetAttendeesBase(JWTEndpoint):
+    attendee_type = None
+    schema = {
+        "type": "object",
+        "properties": {
+            "org_id": {"type": "string"},
+            "user_id": {"type": "string"},
+            "event_id": {"type": "string"}
+            },
+        "required": ["org_id", "user_id", "event_id"]
+    }
+
+    def get(self):
+        self.validate_form(request.json)
+        user, org = get_organizer_and_org(request.json["user_id"],
+                                          request.json["org_id"])
+        event = get_event(request.json["event_id"])
+        check_if_org_event(org, event)
+
+        return jsonify({
+            "event_id": request.json["event_id"],
+            self.attendee_type: getattr(event, self.attendee_type)()})
+
+
+class VolunteersEndPoint(GetAttendeesBase):
+    uri = "/volunteers"
+    attendee_type = "volunteer_users"
+
+
+class AttendeesEndPoint(GetAttendeesBase):
+    uri = "/attendees"
+    attendee_type = "attendee_users"
+
+
 ENDPOINTS = [EventEndPoint,
              AttendEventEndpoint,
              UnattendEventEndpoint,
              VolunteerEventEndpoint,
-             UnvolunteerEventEndpoint]
+             UnvolunteerEventEndpoint,
+             VolunteersEndPoint,
+             AttendeesEndPoint]

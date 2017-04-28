@@ -3,7 +3,7 @@
     aidex models
     ~~~~~~
 """
-from toolz import valfilter
+from toolz import valfilter, dissoc
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
 from sqlalchemy import ForeignKey, func
@@ -15,13 +15,18 @@ from .core import db
 
 
 class Dictable(object):
+    _secret_keys = None
+
     def _is_dictable(self, x):
         if not isinstance(x, InstanceState):
             return True
         return False
 
-    def as_dict(self):
-        return valfilter(self._is_dictable, dict(self.__dict__))
+    def as_dict(self, with_secrets=False):
+        d = dict(self.__dict__)
+        if not with_secrets:
+            d = dissoc(d, *self._secret_keys or [])
+        return valfilter(self._is_dictable, d)
 
 
 org_owners_table = db.Table('org_owners',
@@ -39,7 +44,7 @@ follower_followee_table = db.Table('follows',
 
 
 class EventAttendance(db.Model, Dictable):
-    __tablename_ = 'event_attendances'
+    __tablename__ = 'event_attendances'
     user_id = db.Column(UUID, ForeignKey('users.id'), primary_key=True)
     event_id = db.Column(UUID, ForeignKey('events.id'), primary_key=True)
     reviews = db.Column(JSONB)
@@ -53,6 +58,7 @@ class User(db.Model, Dictable):
     User represents the base agent in the system
     """
     __tablename__ = 'users'
+    _secret_keys = ["_password"]
     id = db.Column(UUID, primary_key=True)
     email = db.Column(db.String, nullable=False)
     timestamp = db.Column(db.DateTime,
@@ -155,3 +161,12 @@ class Event(db.Model, Dictable):
     @hybrid_property
     def is_active(self):
         return self.start_date > datetime.now()
+
+    def volunteer_users(self):
+        return [x.attendee for x in self.attendees if x.as_volunteer]
+
+    def attendee_users(self):
+        return [x.attendee for x in self.attendees]
+
+    def non_volunteer_attendees(self):
+        return [x.attendee for x in self.attendees if not x.as_volunteer]
