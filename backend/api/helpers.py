@@ -13,7 +13,7 @@ from twilio import twiml
 import json
 from toolz import curry
 from aidex.core import db
-from aidex.models import User, Org, Event
+from aidex.models import User, Org, Event, EventAttendance
 
 
 def twilio_send_not_found(message):
@@ -89,38 +89,37 @@ def clean_input(input):
 
 
 get_user = curry(get_entity, User)
-get_org = curry(get_entity, Org)
-get_event = curry(get_entity, Event)
+get_event_attendance = curry(get_entity, EventAttendance)
 
 
-def safe_get_org(org_id, update=False):
+def get_org(org_id, update=False):
     get_options = dict(lazyloaded="locations") if update else {}
 
-    return get_org(org_id,
-                   update=update,
-                   **get_options)
+    return get_entity(Org, org_id,
+                      update=update,
+                      **get_options)
 
 
-def safe_get_event(event_id, update=False):
+def get_event(event_id, update=False):
     get_options = dict(lazyloaded="location") if update else {}
 
-    return get_event(event_id,
-                     update=update,
-                     **get_options)
+    return get_entity(Event, event_id,
+                      update=update,
+                      **get_options)
 
 
 def get_organizer_and_org(user_id, org_id,
                           update_user=False, update_org=False):
     user = get_user(user_id,
                     update=update_user)
-    org = safe_get_org(org_id, update_org)
+    org = get_org(org_id, update_org)
     check_if_org_owner(user, org)
     return user, org
 
 
 def get_org_event(event_id, org_id=None,
                   update_event=False, update_org=False):
-    event = safe_get_event(event_id, update_event)
-    org = safe_get_org(org_id)
+    event = get_event(event_id, update_event)
+    org = get_org(org_id)
     check_if_org_event(org, event)
     return org, event

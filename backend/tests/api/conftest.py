@@ -130,11 +130,37 @@ def ingested_event(event, ingested_org, session):
 
 
 @pytest.fixture()
+def ingested_old_event(old_event, ingested_org, session):
+    session.add(old_event)
+    ingested_org.events.append(old_event)
+    session.commit()
+    return Event.query.get(old_event.id)
+
+
+@pytest.fixture()
 def ingested_attendance(ingested_event, event_attendance, session):
     ingested_event.attendees.append(event_attendance)
     session.add(event_attendance)
     session.commit()
     return event_attendance
+
+
+@pytest.fixture()
+def ingested_volunteer_attendance(ingested_event, event_attendance, session):
+    event_attendance.as_volunteer = True
+    ingested_event.attendees.append(event_attendance)
+    session.add(event_attendance)
+    session.commit()
+    return event_attendance
+
+
+@pytest.fixture()
+def ingested_old_volunteer_attendance(ingested_old_event, old_event_attendance, session):
+    old_event_attendance.as_volunteer = True
+    ingested_old_event.attendees.append(old_event_attendance)
+    session.add(old_event_attendance)
+    session.commit()
+    return old_event_attendance
 
 
 @pytest.fixture()

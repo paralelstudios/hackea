@@ -1,8 +1,8 @@
 """create base models
 
-Revision ID: bf0e0d69a48c
+Revision ID: 5eca7c96e459
 Revises: 
-Create Date: 2017-04-28 14:05:22.057738
+Create Date: 2017-04-28 14:24:57.968714
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = 'bf0e0d69a48c'
+revision = '5eca7c96e459'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -75,7 +75,7 @@ def upgrade():
     op.create_table('event_attendances',
     sa.Column('user_id', postgresql.UUID(), nullable=False),
     sa.Column('event_id', postgresql.UUID(), nullable=False),
-    sa.Column('reviews', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('review', sa.String(), nullable=True),
     sa.Column('as_volunteer', sa.Boolean(), server_default='f', nullable=True),
     sa.ForeignKeyConstraint(['event_id'], ['events.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),

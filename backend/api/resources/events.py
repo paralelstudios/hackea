@@ -7,6 +7,7 @@
 from flask_restful import abort
 from flask import request, jsonify
 from toolz import valmap, dissoc, keyfilter
+from datetime import datetime
 from dateparser import parse as dateparse
 from unidecode import unidecode
 from aidex.core import db
@@ -14,12 +15,13 @@ from aidex.helpers import (
     create_event, create_location, try_committing,
     create_event_attendance, check_existence)
 from aidex.models import (
-    Org, User, Event, EventAttendance, Location)
+    Event, Location, EventAttendance)
 from .base import JWTEndpoint
 from ..helpers import (
-    get_entity, check_if_org_owner,
     get_event, check_if_org_event,
-    get_organizer_and_org)
+    get_organizer_and_org,
+    get_user, get_org,
+    get_event_attendance)
 
 
 class EventEndPoint(JWTEndpoint):
@@ -61,10 +63,18 @@ class EventEndPoint(JWTEndpoint):
         return cleaned_data
 
     def _check_dates(self, start, end):
-        if dateparse(start) > dateparse(end):
+        start = dateparse(start)
+        end = dateparse(end)
+        if start > end:
             abort(400,
                   description="Start date {} is after end date {}".format(
                       start, end))
+
+        if start < datetime.now():
+            abort(400,
+                  description="Start date {} is before today {}".format(
+                      start, datetime.now()))
+        return start, end
 
     def post(self):
         self.validate_form(request.json)
@@ -74,7 +84,8 @@ class EventEndPoint(JWTEndpoint):
             request.json["org_id"],
             update_org=True)
 
-        self._check_dates(request.json["start_date"], request.json["end_date"])
+        start, end = self._check_dates(
+            request.json["start_date"], request.json["end_date"])
 
         if check_existence(Event,
                            Event.name == request.json["name"],
@@ -82,8 +93,8 @@ class EventEndPoint(JWTEndpoint):
                            Location.city == request.json["location"]["city"],
                            Location.address == request.json["location"]["address"],
                            Location.country == request.json["location"]["country"],
-                           Event.start_date == request.json["start_date"],
-                           Event.end_date == request.json["end_date"]):
+                           Event.start_date == start,
+                           Event.end_date == end):
             abort(409,
                   description="Event {} already exists".format(request.json["name"]))
         cleaned_data = self._clean_data(request.json)
@@ -111,15 +122,10 @@ class EventEndPoint(JWTEndpoint):
                 "user_id" in request.json and
                 "event_id" in request.json):
             abort(400, "org_id, user_id, and event_id needed to update events")
-        org = get_entity(Org, request.json["org_id"])
-        user = get_entity(User, request.json["user_id"])
-        event = get_entity(Event, request.json["event_id"],
-                           update=True, lazyloaded="location")
-
-        check_if_org_owner(user, org)
-        if event not in org.events:
-            abort(403, description="Event {} does not belong to Org {}".format(
-                event.name, org.name))
+        user, org = get_organizer_and_org(request.json["user_id"],
+                                          request.json["org_id"])
+        event = get_event(request.json["event_id"], update=True)
+        check_if_org_event(org, event)
 
         cleaned_data = self._clean_data(request.json)
 
@@ -135,7 +141,7 @@ class EventEndPoint(JWTEndpoint):
     def get(self):
         if "event_id" not in request.json:
             abort(400, description="event_id needed to get event")
-        event = get_entity(Event, request.json["event_id"])
+        event = get_event(request.json["event_id"])
         return jsonify(event)
 
 
@@ -150,8 +156,8 @@ class AttendEventBaseEndpoint(JWTEndpoint):
             "event_id": {"type": "string"}}}
 
     def _get_entites(self, user_id, event_id):
-        return get_entity(User, user_id, update=True), \
-            get_entity(Event, event_id, update=True, lazyloaded="location")
+        return get_user(user_id, update=True), \
+            get_event(event_id, update=True)
 
     def _create_attendance(self, user, event, as_volunteer=False):
         return create_event_attendance(
@@ -167,9 +173,7 @@ class AttendEventBaseEndpoint(JWTEndpoint):
                     volunteer=attendance.as_volunteer)
 
     def _process_post(self, user, event):
-        attendance = EventAttendance.query \
-                                    .with_for_update() \
-                                    .get((user.id, event.id))
+        attendance = EventAttendance.query.with_for_update().get((user.id, event.id))
         error = None
         if self._to_attend and not attendance:
             attendance = self._create_attendance(user, event, self._as_volunteer)
@@ -245,17 +249,81 @@ class GetAttendeesBase(JWTEndpoint):
 
         return jsonify({
             "event_id": request.json["event_id"],
-            self.attendee_type: getattr(event, self.attendee_type)()})
+            self.attendee_type: getattr(event, self.attendee_type)})
 
 
 class VolunteersEndPoint(GetAttendeesBase):
     uri = "/volunteers"
-    attendee_type = "volunteer_users"
+    attendee_type = "volunteers"
 
 
 class AttendeesEndPoint(GetAttendeesBase):
     uri = "/attendees"
-    attendee_type = "attendee_users"
+    attendee_type = "attendees"
+
+
+class VolunteerReviewEndPoint(JWTEndpoint):
+    uri = "/reviews"
+
+    schema = {
+        "type": "object",
+        "properties": {
+            "org_id": {"type": "string"},
+            "user_id": {"type": "string"},
+            "event_id": {"type": "string"},
+            "review": {"type": "string"}
+            },
+        "required": ["org_id", "user_id", "event_id", "review"]
+    }
+
+    def post(self):
+        self.validate_form(request.json)
+        user, org = get_organizer_and_org(request.json["user_id"],
+                                          request.json["org_id"])
+        event = get_event(request.json["event_id"])
+        if event.end_date > datetime.now():
+            abort(400,
+                  description="Event {} hasn't finished, can't leave a review".format(
+                      event.id))
+        check_if_org_event(org, event)
+        attendence = get_event_attendance((user.id, event.id))
+        if attendence.review:
+            abort(409,
+                  description="User {} already has review for Event {}, can't leave another".format(user.id, event.id))
+
+        attendence.review = unidecode(request.json["review"])
+        try_committing(db.session)
+        return {
+            "user_id": user.id,
+            "event_id": event.id,
+            "review": attendence.review}
+
+    def get(self):
+        if not ("user_id" in request.json and "org_id" in request.json):
+            abort(400, description="Need org_id and user_id to get review")
+        user = get_user(request.json["user_id"])
+        get_org(request.json["org_id"])
+        return {
+            "user_id": user.id,
+            "reviews": user.reviews}
+
+
+class UserAttendancesEndpoint(JWTEndpoint):
+    uri = "/attendances"
+    schema = {
+        "type": "object",
+        "properties": {
+            "user_id": {"type": "string"},
+            "active": {"type": "boolean"}},
+        "required": ["user_id"]}
+
+    def get(self):
+        self.validate_form(request.json)
+        user = get_user(request.json["user_id"])
+        return jsonify({
+            "user_id": user.id,
+            "attendances": user.attendances
+            if "active" in request.json and request.json["active"] else user.events})
 
 
 ENDPOINTS = [EventEndPoint,
@@ -264,4 +332,6 @@ ENDPOINTS = [EventEndPoint,
              VolunteerEventEndpoint,
              UnvolunteerEventEndpoint,
              VolunteersEndPoint,
-             AttendeesEndPoint]
+             AttendeesEndPoint,
+             VolunteerReviewEndPoint,
+             UserAttendancesEndpoint]

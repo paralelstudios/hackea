@@ -42,8 +42,16 @@ def location_data():
 def event_data(org):
     return dict(
         name="FakeEvent",
-        start_date=str(datetime.now()),
-        end_date=str(datetime.now() + timedelta(1)))
+        start_date=str(datetime.now() + timedelta(1)),
+        end_date=str(datetime.now() + timedelta(2)))
+
+
+@pytest.fixture()
+def old_event_data(org):
+    return dict(
+        name="FakeEvent",
+        start_date=str(datetime.now() - timedelta(30)),
+        end_date=str(datetime.now() - timedelta(29)))
 
 
 @pytest.fixture()
@@ -51,6 +59,13 @@ def event_attendance_data(user, event):
     return dict(
         user_id=user.id,
         event_id=event.id)
+
+
+@pytest.fixture()
+def old_event_attendance_data(user, old_event):
+    return dict(
+        user_id=user.id,
+        event_id=old_event.id)
 
 
 @pytest.fixture()
@@ -73,6 +88,16 @@ def event_attendance(event_attendance_data, user):
     return create_event_attendance(event_attendance_data, user)
 
 
+@pytest.fixture()
+def old_event_attendance(old_event_attendance_data, user):
+    return create_event_attendance(old_event_attendance_data, user)
+
+
 @pytest.fixture
 def event(app, event_data, location):
     return create_event(event_data, location)
+
+
+@pytest.fixture
+def old_event(app, old_event_data, location):
+    return create_event(old_event_data, location)

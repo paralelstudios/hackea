@@ -5,7 +5,7 @@
 """
 from toolz import valfilter, dissoc
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
+from sqlalchemy.dialects.postgresql import UUID, ARRAY
 from sqlalchemy import ForeignKey, func
 from datetime import datetime
 from sqlalchemy.orm.state import InstanceState
@@ -47,10 +47,10 @@ class EventAttendance(db.Model, Dictable):
     __tablename__ = 'event_attendances'
     user_id = db.Column(UUID, ForeignKey('users.id'), primary_key=True)
     event_id = db.Column(UUID, ForeignKey('events.id'), primary_key=True)
-    reviews = db.Column(JSONB)
+    review = db.Column(db.String)
     as_volunteer = db.Column(db.Boolean, server_default='f')
-    attendee = db.relationship("User", back_populates="events")
-    event = db.relationship("Event", back_populates="attendees")
+    attendee = db.relationship("User", back_populates="_events")
+    event = db.relationship("Event", back_populates="_attendees")
 
 
 class User(db.Model, Dictable):
@@ -72,8 +72,20 @@ class User(db.Model, Dictable):
     orgs = db.relationship(
         "Org", secondary=org_owners_table,
         backref="organizers")
-    events = db.relationship("EventAttendance", back_populates="attendee",
-                             cascade="all, delete-orphan", passive_deletes=True)
+    _events = db.relationship("EventAttendance", back_populates="attendee",
+                              cascade="all, delete-orphan", passive_deletes=True)
+
+    @hybrid_property
+    def reviews(self):
+        return [x.review for x in self._events if x.as_volunteer and x.review]
+
+    @hybrid_property
+    def events(self):
+        return [x.event for x in self._events]
+
+    @hybrid_property
+    def attendances(self):
+        return [x for x in self.events if x.is_active]
 
     @hybrid_property
     def password(self):
@@ -155,18 +167,21 @@ class Event(db.Model, Dictable):
     org = db.relationship("Org", back_populates="events", single_parent=True)
     location = db.relationship("Location", uselist=False, back_populates="event",
                                cascade="all, delete-orphan", lazy="joined")
-    attendees = db.relationship("EventAttendance", back_populates="event",
-                                cascade="all, delete-orphan", passive_deletes=True)
+    _attendees = db.relationship("EventAttendance", back_populates="event",
+                                 cascade="all, delete-orphan", passive_deletes=True)
 
     @hybrid_property
     def is_active(self):
         return self.start_date > datetime.now()
 
-    def volunteer_users(self):
-        return [x.attendee for x in self.attendees if x.as_volunteer]
+    @hybrid_property
+    def volunteers(self):
+        return [x.attendee for x in self._attendees if x.as_volunteer]
 
-    def attendee_users(self):
-        return [x.attendee for x in self.attendees]
+    @hybrid_property
+    def attendees(self):
+        return [x.attendee for x in self._attendees]
 
+    @hybrid_property
     def non_volunteer_attendees(self):
-        return [x.attendee for x in self.attendees if not x.as_volunteer]
+        return [x.attendee for x in self._attendees if not x.as_volunteer]
