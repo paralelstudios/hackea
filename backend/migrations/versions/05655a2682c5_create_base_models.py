@@ -1,8 +1,8 @@
 """create base models
 
-Revision ID: 5eca7c96e459
+Revision ID: 05655a2682c5
 Revises: 
-Create Date: 2017-04-28 14:24:57.968714
+Create Date: 2017-04-29 11:50:17.649501
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '5eca7c96e459'
+revision = '05655a2682c5'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -22,10 +22,10 @@ def upgrade():
     sa.Column('id', postgresql.UUID(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('mission', sa.String(), nullable=False),
-    sa.Column('phone', sa.String(), nullable=True),
-    sa.Column('email', sa.String(), nullable=False),
-    sa.Column('services', postgresql.ARRAY(sa.String()), nullable=False),
-    sa.Column('categories', postgresql.ARRAY(sa.String()), nullable=True),
+    sa.Column('phone', sa.String(), nullable=False),
+    sa.Column('email', sa.String(), nullable=True),
+    sa.Column('services', postgresql.ARRAY(sa.String()), nullable=True),
+    sa.Column('categories', postgresql.ARRAY(sa.String()), nullable=False),
     sa.Column('established', sa.DateTime(), nullable=True),
     sa.Column('timestamp', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
     sa.Column('fiveoone', sa.Boolean(), server_default='f', nullable=True),

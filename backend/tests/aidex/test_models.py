@@ -27,7 +27,8 @@ def test_user_model_commit(user, session):
     committed_user = User.query.get(user.id)
     assert assert_equal_keys(
         user.as_dict(), committed_user.as_dict(),
-        "phone", "name", "_password")
+        "phone", "name")
+    assert committed_user._password == user._password
     assert isinstance(committed_user.timestamp, datetime)
 
 
@@ -40,7 +41,7 @@ def test_org_location_model_commit(org, session, location):
     committed_location = Location.query.get(location.id)
     assert assert_equal_keys(
         org.as_dict(), committed_org.as_dict(),
-        "email", "phone", "services")
+        "email", "phone", "categories")
     assert validate_uuid(committed_org.id)
     assert isinstance(committed_org.timestamp, datetime)
     assert committed_location in org.locations
@@ -77,19 +78,25 @@ def test_event_commit_and_org_relationship(org, event, location, session):
 def tests_event_attendee_relationship(org, session,
                                       event, user, event_attendance):
     org.events.append(event)
-    event.attendees.append(event_attendance)
+    event._attendees.append(event_attendance)
     session.add(org)
     session.add(user)
     session.commit()
     committed_event = Event.query.get(event.id)
     committed_event_a = EventAttendance.query.get((user.id, event.id))
     committed_user = User.query.get(user.id)
-    assert event_attendance in committed_event.attendees
-    assert event_attendance in committed_user.events
+    assert event_attendance in committed_event._attendees
+    assert event_attendance in committed_user._events
     assert user == committed_event_a.attendee
     assert event == committed_event_a.event
 
+    assert user in committed_event.attendees
+    assert event in committed_user.events
+
     committed_event_a.query.delete()
     session.commit()
-    assert event_attendance not in committed_event.attendees
-    assert event_attendance not in committed_user.events
+    assert event_attendance not in committed_event._attendees
+    assert event_attendance not in committed_user._events
+
+    assert user not in committed_event.attendees
+    assert event not in committed_user.events

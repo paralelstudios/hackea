@@ -42,16 +42,17 @@ class SearchEndpoint(JWTEndpoint):
         page = 1 if "page" not in parameters else parameters["page"]
         limit = self._default_limit if "limit" not in parameters else parameters["limit"]
         offset = get_page_offset(page, limit)
-        return limit, offset
+        return page, limit, offset
 
     def get(self):
         self.validate_form(request.json)
         query = filter_orgs(Org.query, **request.json)
-        limit, offset = self._process_limit_and_offset(request.json)
+        page, limit, offset = self._process_limit_and_offset(request.json)
         matches = query.limit(limit).offset(offset).all()
         return jsonify({
             "count": len(matches),
-            "matches": matches})
+            "matches": matches,
+            "page": page})
 
 
 ENDPOINTS = [SearchEndpoint]

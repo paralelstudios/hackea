@@ -114,10 +114,10 @@ class Org(db.Model, Dictable):
     locations = db.relationship("Location", back_populates="org",
                                 cascade="all, delete-orphan", passive_deletes=True,
                                 lazy="joined")
-    phone = db.Column(db.String)
-    email = db.Column(db.String, nullable=False)
-    services = db.Column(ARRAY(db.String), nullable=False)
-    categories = db.Column(ARRAY(db.String))
+    phone = db.Column(db.String, nullable=False)
+    email = db.Column(db.String)
+    services = db.Column(ARRAY(db.String))
+    categories = db.Column(ARRAY(db.String), nullable=False)
     established = db.Column(db.DateTime)
     timestamp = db.Column(db.DateTime, server_default=func.now())
     fiveoone = db.Column(db.Boolean, server_default='f')

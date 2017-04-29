@@ -27,6 +27,11 @@ class OrgsEndpoint(JWTEndpoint):
             "fiveoone": {"type": "string"},
             "phone": {"type": "string"},
             "mission": {"type": "string"},
+            "categories": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                }},
             "services": {
                 "type": "array",
                 "items": {
@@ -44,7 +49,7 @@ class OrgsEndpoint(JWTEndpoint):
                     }}
             }
         },
-        "required": ["user_id", "name", "locations", "services"]
+        "required": ["user_id", "name", "locations", "categories", "phone"]
     }
 
     def get(self):

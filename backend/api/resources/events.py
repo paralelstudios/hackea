@@ -153,7 +153,9 @@ class AttendEventBaseEndpoint(JWTEndpoint):
         "type": "object",
         "properties": {
             "user_id": {"type": "string"},
-            "event_id": {"type": "string"}}}
+            "event_id": {"type": "string"}},
+        "required": ["user_id", "event_id"]
+    }
 
     def _get_entites(self, user_id, event_id):
         return get_user(user_id, update=True), \

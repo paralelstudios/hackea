@@ -6,10 +6,9 @@
 """
 from flask import request, jsonify
 from flask_restful import abort
-from aidex.models import User, Org
 from aidex.helpers import try_committing
 from aidex.core import db
-from ..helpers import get_entity
+from ..helpers import get_org, get_user, get_organizer_and_org
 from .base import JWTEndpoint
 
 
@@ -25,10 +24,8 @@ class FollowEndpoint(JWTEndpoint):
     }
 
     def _get_entites(self, data):
-        if "org_id" not in data:
-            abort(400, "Need an org_id to (un)follow")
-        user = get_entity(User, data['user_id'], True)
-        org = get_entity(Org, data['org_id'], True, lazyloaded="locations")
+        user = get_user(data['user_id'], True)
+        org = get_org(data['org_id'], True)
 
         return user, org
 
@@ -42,25 +39,22 @@ class FollowEndpoint(JWTEndpoint):
         return {"user_id": user.id,
                 "org_id": org.id}, 200
 
+
+class FollowingEndpoint(FollowEndpoint):
+    uri = "/following"
+
     def get(self):
         if "user_id" not in request.json:
             abort(400, description="User id need to find user's follows")
-        user = get_entity(User, request.json["user_id"])
-        followed_orgs = [org for org in user.following]
-        return jsonify({"count": len(followed_orgs),
-                        "followed_orgs": followed_orgs})
+        user = get_user(request.json["user_id"])
+        return jsonify({
+            "user_id": user.id,
+            "count": len(user.following),
+            "followed_orgs": user.following})
 
 
 class UnfollowEndpoint(FollowEndpoint):
     uri = "/unfollow"
-    schema = {
-        "$schema": "http://json-schema.org/draft-04/schema#",
-        "type": "object",
-        "properties": {
-            "user_id": {"type": "string"},
-            "org_id": {"type": "string"}},
-        "required": ["user_id"]
-    }
 
     def post(self):
         self.validate_form(request.json)
@@ -70,7 +64,19 @@ class UnfollowEndpoint(FollowEndpoint):
         user.following.remove(org)
         try_committing(db.session)
         return {"user_id": user.id,
-                "org_id": org.id}, 200
+                "org_id": org.id}
 
 
-ENDPOINTS = [FollowEndpoint, UnfollowEndpoint]
+class FollowersEndpoint(FollowEndpoint):
+    uri = "/followers"
+
+    def get(self):
+        self.validate_form(request.json)
+        user, org = get_organizer_and_org(request.json["user_id"],
+                                          request.json["org_id"])
+        return jsonify({"org_id": org.id,
+                        "count": len(org.followers),
+                        "followers": org.followers})
+
+
+ENDPOINTS = [FollowEndpoint, UnfollowEndpoint, FollowingEndpoint, FollowersEndpoint]

@@ -25,16 +25,16 @@ def test_follow_post(client, ingested_user, ingested_org, auth_key):
     assert resp.status_code == 401
 
 
-def test_follow_get(client, ingested_user, ingested_org, auth_key):
+def test_following_get(client, ingested_user, ingested_org, auth_key):
     data = jsonify_req(dict(user_id=ingested_user.id, org_id=ingested_org.id))
     resp = client.post('/follow', headers=auth_key, **data)
-    resp = client.get('/follow', headers=auth_key, **data)
-    assert "count" in resp.json and "followed_orgs" in resp.json
+    resp = client.get('/following', headers=auth_key, **data)
+    assert "user_id" in resp.json and "count" in resp.json and "followed_orgs" in resp.json
     assert resp.json["count"]
     assert dissoc(ingested_org.as_dict(), "timestamp", "locations") in [dissoc(x, "timestamp", "locations") for x in resp.json["followed_orgs"]]
 
     # test auth
-    resp = client.get('/follow', **data)
+    resp = client.get('/following', **data)
     assert resp.status_code == 401
 
 
@@ -52,4 +52,17 @@ def test_unfollow_post(client, ingested_user, ingested_org, auth_key):
 
     # test auth
     resp = client.post('/unfollow', **data)
+    assert resp.status_code == 401
+
+
+def test_followers_get(client, ingested_user, ingested_org, auth_key):
+    data = jsonify_req(dict(user_id=ingested_user.id, org_id=ingested_org.id))
+    resp = client.post('/follow', headers=auth_key, **data)
+    resp = client.get('/followers', headers=auth_key, **data)
+    assert "org_id" in resp.json and "count" in resp.json and "followers" in resp.json
+    assert resp.json["count"]
+    assert ingested_user.id == resp.json["followers"][0]["id"]
+
+    # test auth
+    resp = client.get('/followers', **data)
     assert resp.status_code == 401
