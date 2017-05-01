@@ -181,7 +181,7 @@ def orgs_sample(session, app):
         org_model = Org(id=uuid(),
                         **dissoc(new_org,
                                  "desires", "fb", "registered",
-                                 "candidates", "cities"))
+                                 "candidates", "cities", "fiveoone"))
         org_model.locations = locations
         session.add(org_model)
         session.commit()

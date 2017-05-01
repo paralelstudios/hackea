@@ -25,13 +25,14 @@ def test_follow_post(client, ingested_user, ingested_org, auth_key):
     assert resp.status_code == 401
 
 
+@pytest.mark.functional
 def test_following_get(client, ingested_user, ingested_org, auth_key):
     data = jsonify_req(dict(user_id=ingested_user.id, org_id=ingested_org.id))
     resp = client.post('/follow', headers=auth_key, **data)
     resp = client.get('/following', headers=auth_key, **data)
     assert "user_id" in resp.json and "count" in resp.json and "followed_orgs" in resp.json
     assert resp.json["count"]
-    assert dissoc(ingested_org.as_dict(), "timestamp", "locations") in [dissoc(x, "timestamp", "locations") for x in resp.json["followed_orgs"]]
+    assert dissoc(ingested_org.as_dict(), "timestamp", "locations", "established") in [dissoc(x, "timestamp", "locations", "established") for x in resp.json["followed_orgs"]]
 
     # test auth
     resp = client.get('/following', **data)
@@ -55,6 +56,7 @@ def test_unfollow_post(client, ingested_user, ingested_org, auth_key):
     assert resp.status_code == 401
 
 
+@pytest.mark.functional
 def test_followers_get(client, ingested_user, ingested_org, auth_key):
     data = jsonify_req(dict(user_id=ingested_user.id, org_id=ingested_org.id))
     resp = client.post('/follow', headers=auth_key, **data)
