@@ -166,15 +166,12 @@ def ingested_old_volunteer_attendance(ingested_old_event, old_event_attendance, 
 @pytest.fixture()
 def orgs_sample(session, app):
     def _create_org(row):
-        boolean_keys = {'registered', 'fiveoone'}
         array_keys = {'services', 'categories'}
         location_key = 'cities'
         new_org = {}
         locations = []
         for key, v in row.items():
-            if key in boolean_keys:
-                new_org[key] = True if ('s' in row[key] or 'y' in row[key]) else False
-            elif key in array_keys:
+            if key in array_keys:
                 new_org[key] = clean_and_split(row[key])
             elif key == location_key:
                 locations += [create_location(dict(city=city))

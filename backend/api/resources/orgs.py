@@ -7,6 +7,7 @@
 from flask import request, jsonify
 from flask_restful import abort
 from toolz import dissoc, keyfilter, valmap
+from dateparser import parse as dateparse
 from aidex.models import Org, User
 from aidex.core import db
 from aidex.helpers import (
@@ -24,7 +25,6 @@ class OrgsEndpoint(JWTEndpoint):
             "user_id": {"type": "string"},
             "name": {"type": "string"},
             "email": {"type": "string"},
-            "fiveoone": {"type": "string"},
             "phone": {"type": "string"},
             "mission": {"type": "string"},
             "categories": {
@@ -77,6 +77,8 @@ class OrgsEndpoint(JWTEndpoint):
             cleaned_data["services"] = [clean_input(v) for v in data["services"]]
         if "locations" in data:
             cleaned_data["locations"] = self._handle_location_data(data)
+        if "established" in data:
+            cleaned_data["established"] = dateparse(cleaned_data["established"])
         return cleaned_data
 
     def put(self):

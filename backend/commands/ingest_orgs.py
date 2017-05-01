@@ -20,13 +20,10 @@ class IngestOrgs(Command):
                         'candidates', 'fiveoone', 'categories']))
 
     def _create_org(self, row):
-        boolean_keys = {'registered', 'fiveoone'}
         array_keys = {'services', 'categories'}
         new_org = {}
         for key, v in row.items():
-            if key in boolean_keys:
-                new_org[key] = True if ('s' in row[key] or 'y' in row[key]) else False
-            elif key in array_keys:
+            if key in array_keys:
                 new_org[key] = clean_and_split(row[key])
             else:
                 new_org[key] = unidecode(v) if v else None

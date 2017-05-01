@@ -25,6 +25,7 @@ def org_data():
         name="A test org",
         mission="to provide aidex with a dummy org",
         phone="567530909",
+        established="1/1/2011",
         email="test@test.org",
         categories=["education", "youth"],
     )

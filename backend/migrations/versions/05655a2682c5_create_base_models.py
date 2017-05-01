@@ -1,7 +1,7 @@
 """create base models
 
 Revision ID: 05655a2682c5
-Revises: 
+Revises:
 Create Date: 2017-04-29 11:50:17.649501
 
 """
@@ -28,7 +28,6 @@ def upgrade():
     sa.Column('categories', postgresql.ARRAY(sa.String()), nullable=False),
     sa.Column('established', sa.DateTime(), nullable=True),
     sa.Column('timestamp', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
-    sa.Column('fiveoone', sa.Boolean(), server_default='f', nullable=True),
     sa.Column('premium', sa.Boolean(), server_default='f', nullable=True),
     sa.PrimaryKeyConstraint('id')
     )

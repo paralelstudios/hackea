@@ -120,7 +120,6 @@ class Org(db.Model, Dictable):
     categories = db.Column(ARRAY(db.String), nullable=False)
     established = db.Column(db.DateTime)
     timestamp = db.Column(db.DateTime, server_default=func.now())
-    fiveoone = db.Column(db.Boolean, server_default='f')
     premium = db.Column(db.Boolean, server_default='f')
     products = db.relationship("Product", back_populates="org",
                                cascade="all, delete-orphan", passive_deletes=True)
