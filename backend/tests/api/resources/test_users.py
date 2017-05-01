@@ -32,9 +32,9 @@ def test_user_post(client, session, user_data):
 
 
 @pytest.mark.functional
-def organized_orgs_get(client, session, ingested_user, ingested_org, auth_key):
+def test_organized_orgs_get(client, session, ingested_user, ingested_org, auth_key):
     ingested_user.orgs.append(ingested_org)
     session.commit()
     data = jsonify_req(dict(user_id=ingested_user.id))
     resp = client.get("/organized/orgs", headers=auth_key, **data)
-    assert ingested_org.id == resp.json[0]["id"]
+    assert ingested_org.id == resp.json["orgs"][0]["id"]

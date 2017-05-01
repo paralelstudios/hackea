@@ -43,7 +43,7 @@ _/organized/orgs_
 		REQUEST: {"user_id": {"type": "string"}
 		RESPONSE:      	RESPONSE:
      	{
-   			"org": {
+   			"orgs": [{
 	            "email": null,
 	            "fiveoone": null,
 	            "id": "fc64c155-5f74-492b-ba59-8f3455d3a15e",
@@ -63,12 +63,7 @@ _/organized/orgs_
 	            "services": ["blah", ..."],
 				"established": "blah",
 				"categories" ["blah", ...]
-        	},
-			"events" : [{
-				"id": "blah",
-				"name": "blah",
-				"timestamp"
-			}]
+        	}],
         }
 
 ### Organizations

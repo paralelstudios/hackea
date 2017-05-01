@@ -6,7 +6,7 @@
 """
 from unidecode import unidecode
 from toolz import keyfilter
-from flask import request
+from flask import request, jsonify
 from flask_restful import abort
 from aidex.core import db
 from aidex.models import User
@@ -61,7 +61,8 @@ class OrganizedEndpoint(JWTEndpoint):
     def get(self):
         self.validate_form(request.json)
         user = get_user(request.json["user_id"])
-        return user.orgs
+        return jsonify({
+            "orgs": user.orgs})
 
 
-ENDPOINTS = [UsersEndpoint]
+ENDPOINTS = [UsersEndpoint, OrganizedEndpoint]
