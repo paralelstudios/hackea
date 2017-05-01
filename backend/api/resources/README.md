@@ -398,6 +398,9 @@ _/attendances_
 
 _/search_
 
+* GET ~ Search orgs
+
+
 		REQUIRED: JWT
 		REQUEST: {
             "keywords": {
