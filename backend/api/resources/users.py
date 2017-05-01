@@ -11,7 +11,8 @@ from flask_restful import abort
 from aidex.core import db
 from aidex.models import User
 from aidex.helpers import check_existence, try_committing, create_user
-from .base import Endpoint
+from .base import Endpoint, JWTEndpoint
+from ..helpers import get_user
 
 
 class UsersEndpoint(Endpoint):
@@ -47,6 +48,20 @@ class UsersEndpoint(Endpoint):
         db.session.add(new_user)
         try_committing(db.session)
         return {"user_id": new_user.id}, 201
+
+
+class OrganizedEndpoint(JWTEndpoint):
+    uri = "/organized/orgs"
+    schema = {
+        "type": "object",
+        "properties": {
+            "user_id": {"type": "string"}},
+        "required": ["user_id"]}
+
+    def get(self):
+        self.validate_form(request.json)
+        user = get_user(request.json["user_id"])
+        return user.orgs
 
 
 ENDPOINTS = [UsersEndpoint]

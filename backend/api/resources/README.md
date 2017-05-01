@@ -35,7 +35,41 @@ _/auth_
 			"access_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE0OTI0NzI5NzgsImlhdCI6MTQ5MjQ3MjY3OCwibmJmIjoxNDkyNDcyNjc4LCJpZGVudGl0eSI6IjI2ZTYzZWFmLTM0ZTMtNDI2NS1hMjBmLWVlY2RmYjhhYjZlMSJ9.9suLDK-HUxVY82u75Dav9jI4JhFChiYK-51qwaavNPo"
 		}
 
+_/organized/orgs_
 
+* GET ~ Get the orgs a user organizes
+
+		REQUIRED: JWT, user_id
+		REQUEST: {"user_id": {"type": "string"}
+		RESPONSE:      	RESPONSE:
+     	{
+   			"org": {
+	            "email": null,
+	            "fiveoone": null,
+	            "id": "fc64c155-5f74-492b-ba59-8f3455d3a15e",
+	            "locations": [{
+					"id": 1,
+					"address": "blah",
+					"org_id": "blah",
+					"event_id": "blah",
+					"country": "blah",
+					"city": "blah"
+				}],
+	            "mission": "To protect the interests of birdlike peoples",
+	            "name": "The Association for Birdlike Peoples",
+	            "phone": "4444444444",
+	            "premium": True,
+	            "registered": null,
+	            "services": ["blah", ..."],
+				"established": "blah",
+				"categories" ["blah", ...]
+        	},
+			"events" : [{
+				"id": "blah",
+				"name": "blah",
+				"timestamp"
+			}]
+        }
 
 ### Organizations
 

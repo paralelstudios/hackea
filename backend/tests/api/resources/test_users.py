@@ -29,3 +29,12 @@ def test_user_post(client, session, user_data):
     # test post without reqs
     resp = client.post('/users', **jsonify_req(dict(email="foff@foff.gmail.com")))
     assert resp.json == {'message': "/users: 'name' is a required property"}
+
+
+@pytest.mark.functional
+def organized_orgs_get(client, session, ingested_user, ingested_org, auth_key):
+    ingested_user.orgs.append(ingested_org)
+    session.commit()
+    data = jsonify_req(dict(user_id=ingested_user.id))
+    resp = client.get("/organized/orgs", headers=auth_key, **data)
+    assert ingested_org.id == resp.json[0]["id"]
