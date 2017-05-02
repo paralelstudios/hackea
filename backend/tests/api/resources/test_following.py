@@ -32,7 +32,10 @@ def test_following_get(client, ingested_user, ingested_org, auth_key):
     resp = client.get('/following', headers=auth_key, **data)
     assert "user_id" in resp.json and "count" in resp.json and "followed_orgs" in resp.json
     assert resp.json["count"]
-    assert dissoc(ingested_org.as_dict(), "timestamp", "locations", "established") in [dissoc(x, "timestamp", "locations", "established") for x in resp.json["followed_orgs"]]
+    assert dissoc(
+        ingested_org.as_dict(), "timestamp", "locations", "established") in [
+            dissoc(x, "timestamp", "locations", "established")
+            for x in resp.json["followed_orgs"]]
 
     # test auth
     resp = client.get('/following', **data)

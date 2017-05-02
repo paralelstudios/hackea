@@ -43,3 +43,13 @@ class TestFixtureException(Exception):
 def jsonify_req(data):
     return dict(data=json.dumps(data, cls=AIDEXJsonEncoder),
                 content_type='application/json')
+
+
+def make_query_string(data):
+    units = []
+    for k, v in data.items():
+        if isinstance(v, list):
+            units += ["{}[]={}".format(k, x) for x in v]
+        else:
+            units.append("{}={}".format(k, v))
+    return '&'.join(units)
