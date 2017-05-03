@@ -39,7 +39,7 @@ class SMSOrgEndpoint(Resource):
         return keywords, cities
 
     def _process_body(self, body):
-        page = int(request.cookies.get('page', 0))
+        page = int(request.cookies.get('page', 1))
         if body == "+":
             query = request.cookies.get('query')
             if not query:
@@ -65,13 +65,20 @@ class SMSOrgEndpoint(Resource):
         results = [self._org_row_format(org)
                    for org in
                    query.limit(self._default_limit).offset(offset)]
-
-        message = '\n'.join(
-            ['Encontramos {} organizaciones bajo "{}" (mostrando {}):'.format(
-                count,
-                body,
-                self._default_limit)] +
-            results)
+        if page < 2:
+            message = '\n'.join(
+                ['Encontramos {} organizaciones bajo "{}" (mostrando {}):'.format(
+                    count,
+                    body,
+                    self._default_limit if count > self._default_limit else count)] +
+                results)
+        else:
+            message = '\n'.join(
+                ['más organizaciones bajo "{}" (mostrando {} de {}):'.format(
+                    body,
+                    self._default_limit if count > self._default_limit else count,
+                    count)] +
+                results)
 
         if count - offset > self._default_limit:
             message += '\nPara más resultados, responda con "+"'
@@ -91,6 +98,7 @@ class SMSOrgEndpoint(Resource):
                 body,
                 expires=expires.strftime(
                     '%a, %d %b %Y %H:%M:%S GMT'))
+
         out_resp.set_cookie(
             'page',
             str(page),
