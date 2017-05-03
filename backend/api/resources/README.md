@@ -40,7 +40,7 @@ _/organized/orgs_
 * GET ~ Get the orgs a user organizes
 
 		REQUIRED: JWT, user_id
-		REQUEST: {"user_id": {"type": "string"}
+		QUERY_STRING PARAMS: {"user_id": {"type": "string"}
 		RESPONSE:      	RESPONSE:
      	{
    			"orgs": [{
@@ -113,6 +113,7 @@ _/orgs_
 * GET ~ Get an org and their events:
 
 		REQUIRED: JWT
+		QUERY_STRING PARAMS: org_id
      	RESPONSE:
      	{
    			"org": {
@@ -167,7 +168,7 @@ _/following_
 * GET ~ Get the orgs a user is following
 
 		REQUIRED: JWT ["user_id"]
-		REQUEST: {
+		QUERY_STRING PARAMS: {
             "user_id": {"type": "string"}}
 		RESPONSE: {
 			"user_id": "blah",
@@ -210,7 +211,7 @@ _/followers_
 * GET - Get an orgs followers
 
 		REQUIRED: JWT ["org_id", "user_id"]
-		REQUEST: {
+		QUERY_STRING PARAMS: {
             "user_id": {"type": "string"},
             "org_id": {"type": "string"}}
 		RESPONSE: {
@@ -257,7 +258,7 @@ _/events_
 * GET - Get an event
 
 		REQUIRED: JWT, ["event_id"]
-		REQUEST: {"event_id": {"type": "string"}}
+		QUERY_STRING PARAMS: {"event_id": {"type": "string"}}
 		RESPONSE: {
 			"id": "blah",
 			"org_id": "blah",
@@ -306,7 +307,7 @@ _/attendees_
 * GET ~ Get the attendees of an event (includes volunteers)
 
 		REQUIRED: JWT, ["org_id", "user_id", "event_id"]
-		REQUEST: {
+		QUERY_STRING PARAMS: {
             "org_id": {"type": "string"},
             "user_id": {"type": "string"},
             "event_id": {"type": "string"}
@@ -325,7 +326,7 @@ _/volunteers_
 * GET ~ Get the volunteers of an event
 
 		REQUIRED: JWT, ["org_id", "user_id", "event_id"]
-		REQUEST: {
+		QUERY_STRING PARAMS: {
             "org_id": {"type": "string"},
             "user_id": {"type": "string"},
             "event_id": {"type": "string"}
@@ -359,7 +360,7 @@ _/reviews_
 * GET ~ Get the reviews for a user
 
 		REQUIRED: JWT, ["user_id", "org_id"]
-		REQUEST: {
+		QUERY_STRING PARAMS: {
 			"user_id": {"type": "string"},
 			"org_id": {"type": "string"}}
 		RESPONSE: {
@@ -372,7 +373,7 @@ _/attendances_
 * GET ~ Get the events a user is attending, only pending ones if "active" is `True`
 
 		REQUIRED: JWT, ["user_id"]
-		REQUEST: {
+		QUERY_STRING PARAMS: {
 			"user_id": {"type": "string"},
             "active": {"type": "boolean"}}
 		RESPONSE: {
@@ -402,7 +403,7 @@ _/search_
 
 
 		REQUIRED: JWT
-		REQUEST: {
+		QUERY_STRING PARAMS: {
             "keywords": {
                 "type": "array",
                 "items": {
