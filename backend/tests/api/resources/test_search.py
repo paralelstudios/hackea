@@ -5,7 +5,7 @@
     tests Search API resources
 """
 import pytest
-from ...helpers import jsonify_req, make_query_string
+from ...helpers import make_query_string
 
 
 @pytest.mark.functional

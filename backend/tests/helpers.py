@@ -49,7 +49,7 @@ def make_query_string(data):
     units = []
     for k, v in data.items():
         if isinstance(v, list):
-            units += ["{}[]={}".format(k, x) for x in v]
+            units += ["{}={}".format(k, x) for x in v]
         else:
             units.append("{}={}".format(k, v))
     return '&'.join(units)

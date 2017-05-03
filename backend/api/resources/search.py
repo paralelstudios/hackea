@@ -18,17 +18,17 @@ class SearchEndpoint(JWTEndpoint):
     schema = {
         "type": "object",
         "properties": {
-            "keywords[]": {
+            "keywords": {
                 "type": "array",
                 "items": {
                     "type": "string"
                 }},
-            "categories[]": {
+            "categories": {
                 "type": "array",
                 "items": {
                     "type": "string",
                 }},
-            "cities[]": {
+            "cities": {
                 "type": "array",
                 "items": {
                     "type": "string"
@@ -51,9 +51,9 @@ class SearchEndpoint(JWTEndpoint):
         if not (request.args.keys() & self.schema["properties"].keys()):
             abort(400, description="Need some search criteria")
         query = filter_orgs(Org.query,
-                            keywords=request.args.getlist("keywords[]"),
-                            categories=request.args.getlist("categories[]"),
-                            cities=request.args.getlist("cities[]"),
+                            keywords=request.args.getlist("keywords"),
+                            categories=request.args.getlist("categories"),
+                            cities=request.args.getlist("cities"),
                             country=request.args.get("country"))
         page, limit, offset = self._process_limit_and_offset(request.args)
         matches = query.limit(limit).offset(offset).all()
