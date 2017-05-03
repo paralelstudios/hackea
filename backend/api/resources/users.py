@@ -59,8 +59,8 @@ class OrganizedEndpoint(JWTEndpoint):
         "required": ["user_id"]}
 
     def get(self):
-        self.validate_form(request.json)
-        user = get_user(request.json["user_id"])
+        self.validate_query(request.args.keys())
+        user = get_user(request.args["user_id"])
         return jsonify({
             "orgs": user.orgs})
 

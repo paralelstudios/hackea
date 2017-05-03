@@ -139,9 +139,8 @@ class EventEndPoint(JWTEndpoint):
         return {"event_id": event.id}, 200
 
     def get(self):
-        if "event_id" not in request.json:
-            abort(400, description="event_id needed to get event")
-        event = get_event(request.json["event_id"])
+        self.validate_query(request.args.keys(), "event_id")
+        event = get_event(request.args["event_id"])
         return jsonify(event)
 
 
@@ -243,14 +242,14 @@ class GetAttendeesBase(JWTEndpoint):
     }
 
     def get(self):
-        self.validate_form(request.json)
-        user, org = get_organizer_and_org(request.json["user_id"],
-                                          request.json["org_id"])
-        event = get_event(request.json["event_id"])
+        self.validate_query(request.args.keys())
+        user, org = get_organizer_and_org(request.args["user_id"],
+                                          request.args["org_id"])
+        event = get_event(request.args["event_id"])
         check_if_org_event(org, event)
 
         return jsonify({
-            "event_id": request.json["event_id"],
+            "event_id": event.id,
             self.attendee_type: getattr(event, self.attendee_type)})
 
 
@@ -301,10 +300,11 @@ class VolunteerReviewEndPoint(JWTEndpoint):
             "review": attendence.review}
 
     def get(self):
-        if not ("user_id" in request.json and "org_id" in request.json):
-            abort(400, description="Need org_id and user_id to get review")
-        user = get_user(request.json["user_id"])
-        get_org(request.json["org_id"])
+        self.validate_query(request.args.keys(), "user_id")
+        user = get_user(request.args["user_id"])
+        if not user.orgs:
+            abort(400,
+                  description="user must be an organizer to see volunteers review")
         return {
             "user_id": user.id,
             "reviews": user.reviews}
@@ -320,12 +320,12 @@ class UserAttendancesEndpoint(JWTEndpoint):
         "required": ["user_id"]}
 
     def get(self):
-        self.validate_form(request.json)
-        user = get_user(request.json["user_id"])
+        self.validate_query(request.args)
+        user = get_user(request.args["user_id"])
         return jsonify({
             "user_id": user.id,
             "attendances": user.attendances
-            if "active" in request.json and request.json["active"] else user.events})
+            if request.args.get("active") else user.events})
 
 
 ENDPOINTS = [EventEndPoint,

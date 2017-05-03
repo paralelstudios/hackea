@@ -9,7 +9,7 @@ import pytest
 from dateparser import parse as dateparse
 from aidex.models import Org
 from aidex.helpers import create_user
-from ...helpers import jsonify_req, assert_equal_keys
+from ...helpers import jsonify_req, assert_equal_keys, make_query_string
 
 
 @pytest.mark.functional
@@ -58,8 +58,8 @@ def test_org_put(client, session, ingested_org, ingested_user, auth_key, user_da
 
 @pytest.mark.functional
 def test_org_get(client, ingested_org, auth_key):
-    data = jsonify_req(dict(org_id=ingested_org.id))
-    resp = client.get('/orgs', headers=auth_key, **data)
+    data = make_query_string(dict(org_id=ingested_org.id))
+    resp = client.get('/orgs?{}'.format(data), headers=auth_key)
     assert "events" in resp.json and "org" in resp.json
     assert_equal_keys(ingested_org.as_dict(), resp.json["org"],
                       *dissoc(ingested_org.as_dict(),

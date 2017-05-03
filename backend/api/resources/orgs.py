@@ -8,11 +8,14 @@ from flask import request, jsonify
 from flask_restful import abort
 from toolz import dissoc, keyfilter, valmap
 from dateparser import parse as dateparse
-from aidex.models import Org, User
+from aidex.models import Org
 from aidex.core import db
 from aidex.helpers import (
     try_committing, create_location, create_org)
-from ..helpers import get_entity, check_if_org_owner, clean_input
+from ..helpers import (
+    get_org,
+    get_user,
+    check_if_org_owner, clean_input)
 from .base import JWTEndpoint
 
 
@@ -53,9 +56,8 @@ class OrgsEndpoint(JWTEndpoint):
     }
 
     def get(self):
-        if "org_id" not in request.json:
-            abort(400, description="org_id needed to get an org")
-        org = get_entity(Org, request.json["org_id"])
+        self.validate_query(request.args.keys(), "org_id")
+        org = get_org(request.args.get("org_id"))
         return jsonify({
             "org": org,
             "events": [event for event in org.events if event.is_active()]})
@@ -84,11 +86,9 @@ class OrgsEndpoint(JWTEndpoint):
     def put(self):
         if not ("user_id" in request.json and "org_id" in request.json):
             abort(400, description="org_id and user_id needed to update an org")
-        user_id = request.json["user_id"]
-        user = get_entity(User, user_id)
+        user = get_user(request.json["user_id"])
 
-        org_id = request.json["org_id"]
-        org = get_entity(Org, org_id, True, "locations")
+        org = get_org(request.json["org_id"], True)
         check_if_org_owner(user, org)
 
         cleaned_data = self._clean_data(request.json)
@@ -101,13 +101,12 @@ class OrgsEndpoint(JWTEndpoint):
             org.locations = new_locations
 
         try_committing(db.session)
-        return {"org_id": org.id, "user_id": user_id}, 200
+        return {"org_id": org.id, "user_id": user.id}, 200
 
     def post(self):
         self.validate_form(request.json)
 
-        user_id = request.json["user_id"]
-        user = get_entity(User, user_id, True)
+        user = get_user(request.json["user_id"], True)
 
         cleaned_data = self._clean_data(request.json)
 
@@ -124,7 +123,7 @@ class OrgsEndpoint(JWTEndpoint):
         try_committing(db.session)
 
         return {"org_id": new_org.id,
-                "user_id": user_id}, 201
+                "user_id": user.id}, 201
 
 
 ENDPOINTS = [OrgsEndpoint]

@@ -44,9 +44,8 @@ class FollowingEndpoint(FollowEndpoint):
     uri = "/following"
 
     def get(self):
-        if "user_id" not in request.json:
-            abort(400, description="User id need to find user's follows")
-        user = get_user(request.json["user_id"])
+        self.validate_query(request.args, "user_id")
+        user = get_user(request.args["user_id"])
         return jsonify({
             "user_id": user.id,
             "count": len(user.following),
@@ -71,9 +70,9 @@ class FollowersEndpoint(FollowEndpoint):
     uri = "/followers"
 
     def get(self):
-        self.validate_form(request.json)
-        user, org = get_organizer_and_org(request.json["user_id"],
-                                          request.json["org_id"])
+        self.validate_query(request.args.keys())
+        user, org = get_organizer_and_org(request.args["user_id"],
+                                          request.args["org_id"])
         return jsonify({"org_id": org.id,
                         "count": len(org.followers),
                         "followers": org.followers})

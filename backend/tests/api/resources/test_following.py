@@ -6,7 +6,7 @@
 """
 import pytest
 from toolz import dissoc
-from ...helpers import jsonify_req
+from ...helpers import jsonify_req, make_query_string
 
 
 @pytest.mark.functional
@@ -27,9 +27,10 @@ def test_follow_post(client, ingested_user, ingested_org, auth_key):
 
 @pytest.mark.functional
 def test_following_get(client, ingested_user, ingested_org, auth_key):
+    query = make_query_string(dict(user_id=ingested_user.id, org_id=ingested_org.id))
     data = jsonify_req(dict(user_id=ingested_user.id, org_id=ingested_org.id))
     resp = client.post('/follow', headers=auth_key, **data)
-    resp = client.get('/following', headers=auth_key, **data)
+    resp = client.get('/following?{}'.format(query), headers=auth_key)
     assert "user_id" in resp.json and "count" in resp.json and "followed_orgs" in resp.json
     assert resp.json["count"]
     assert dissoc(
@@ -38,7 +39,7 @@ def test_following_get(client, ingested_user, ingested_org, auth_key):
             for x in resp.json["followed_orgs"]]
 
     # test auth
-    resp = client.get('/following', **data)
+    resp = client.get('/following?{}'.format(query))
     assert resp.status_code == 401
 
 
@@ -62,12 +63,13 @@ def test_unfollow_post(client, ingested_user, ingested_org, auth_key):
 @pytest.mark.functional
 def test_followers_get(client, ingested_user, ingested_org, auth_key):
     data = jsonify_req(dict(user_id=ingested_user.id, org_id=ingested_org.id))
+    query = make_query_string(dict(user_id=ingested_user.id, org_id=ingested_org.id))
     resp = client.post('/follow', headers=auth_key, **data)
-    resp = client.get('/followers', headers=auth_key, **data)
+    resp = client.get('/followers?{}'.format(query), headers=auth_key)
     assert "org_id" in resp.json and "count" in resp.json and "followers" in resp.json
     assert resp.json["count"]
     assert ingested_user.id == resp.json["followers"][0]["id"]
 
     # test auth
-    resp = client.get('/followers', **data)
+    resp = client.get('/followers?{}'.format(query))
     assert resp.status_code == 401

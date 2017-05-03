@@ -7,7 +7,7 @@
 from toolz import dissoc
 import pytest
 from aidex.models import User
-from ...helpers import jsonify_req, assert_equal_keys
+from ...helpers import jsonify_req, assert_equal_keys, make_query_string
 
 
 @pytest.mark.functional
@@ -35,6 +35,6 @@ def test_user_post(client, session, user_data):
 def test_organized_orgs_get(client, session, ingested_user, ingested_org, auth_key):
     ingested_user.orgs.append(ingested_org)
     session.commit()
-    data = jsonify_req(dict(user_id=ingested_user.id))
-    resp = client.get("/organized/orgs", headers=auth_key, **data)
+    data = make_query_string(dict(user_id=ingested_user.id))
+    resp = client.get("/organized/orgs?{}".format(data), headers=auth_key)
     assert ingested_org.id == resp.json["orgs"][0]["id"]
