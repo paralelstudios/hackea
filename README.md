@@ -29,3 +29,8 @@ $ docker-compose build
 $ docker-compose up -d
 $ docker-compose run backend alembic upgrade head
 ```
+
+finally get the machines ip to make calls to it
+```
+$ docker-machine ip aidex
+```
