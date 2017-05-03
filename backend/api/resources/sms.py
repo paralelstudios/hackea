@@ -56,7 +56,7 @@ class SMSOrgEndpoint(Resource):
             return twilio_send_not_found(self._not_found_msg)
 
         offset = get_page_offset(page, self._default_limit)
-        keywords, cities = self._process_query_str(body)
+        keywords, cities = self._process_query(body)
         query = filter_orgs(Org.query, keywords=keywords, cities=cities)
         count = query.count()
         if not count:

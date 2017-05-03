@@ -76,3 +76,6 @@ def test_full_search(client, auth_key):
     resp = client.get(
         "/search?{}".format(data), headers=auth_key)
     assert not resp.json["count"]
+
+    resp = client.get("search?cities=blah&keywords=blah", headers=auth_key)
+    assert "count" in resp.json
