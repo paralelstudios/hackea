@@ -60,7 +60,7 @@ class OrgsEndpoint(JWTEndpoint):
         org = get_org(request.args.get("org_id"))
         return jsonify({
             "org": org,
-            "events": [event for event in org.events if event.is_active()]})
+            "events": [event for event in org.events if event.is_active]})
 
     def _handle_location_data(self, data):
         is_location_property = lambda x: x in self.schema["properties"]["locations"]["items"]["properties"]  # noqa

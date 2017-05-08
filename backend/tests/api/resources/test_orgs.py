@@ -57,7 +57,7 @@ def test_org_put(client, session, ingested_org, ingested_user, auth_key, user_da
 
 
 @pytest.mark.functional
-def test_org_get(client, ingested_org, auth_key):
+def test_org_get(client, ingested_org, auth_key, ingested_event):
     data = make_query_string(dict(org_id=ingested_org.id))
     resp = client.get('/orgs?{}'.format(data), headers=auth_key)
     assert "events" in resp.json and "org" in resp.json
@@ -66,6 +66,7 @@ def test_org_get(client, ingested_org, auth_key):
                               "timestamp", "events", "established").keys())
     assert ingested_org.timestamp == dateparse(resp.json["org"]["timestamp"])
     assert ingested_org.established == dateparse(resp.json["org"]["established"])
+    assert ingested_event.id == resp.json["events"][0]["id"]
 
 
 @pytest.mark.integration

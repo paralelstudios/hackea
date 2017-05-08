@@ -128,7 +128,7 @@ class Org(db.Model, Dictable):
 
     @hybrid_property
     def active_events(self):
-        return [e for e in self.events if e.is_active()]
+        return [e for e in self.events if e.is_active]
 
 
 class Product(db.Model, Dictable):
